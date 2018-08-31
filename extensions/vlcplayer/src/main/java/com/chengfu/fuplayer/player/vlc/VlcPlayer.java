@@ -18,7 +18,7 @@ import java.util.Map;
 
 public final class VlcPlayer extends AbsPlayer {
 
-    public static final String TAG = "SysPlayer";
+    public static final String TAG = "VlcPlayer";
 
     private final Context mContext;
     private MediaPlayer mMediaPlayer;

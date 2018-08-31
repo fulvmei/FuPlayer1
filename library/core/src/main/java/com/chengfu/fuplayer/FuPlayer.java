@@ -44,7 +44,7 @@ public class FuPlayer implements IPlayer {
         }
         if (mPlayer != null) {
             mCurrentPosition = mPlayer.getCurrentPosition();
-            mPlayer.stop();
+            mPlayer.release();
         }
         mPlayer = player;
 
@@ -391,6 +391,7 @@ public class FuPlayer implements IPlayer {
 
     @Override
     public void setMediaSource(MediaSource mediaSource) {
+        mMediaSource=mediaSource;
         mPlayer.setMediaSource(mediaSource);
     }
 
