@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/option_player"
+        android:title="播放器"
+        app:showAsAction="always">
+        <menu>
+            <group
+                android:id="@+id/group_player"
+                android:checkableBehavior="single">
+                <item
+                    android:id="@+id/option_player_sys"
+                    android:checked="true"
+                    android:title="MediaPlayer" />
+                <item
+                    android:id="@+id/option_player_exo"
+                    android:title="ExoPlayer" />
+                <item
+                    android:id="@+id/option_player_ijk"
+                    android:title="IjkPlayer" />
+                <item
+                    android:id="@+id/option_player_qiniu"
+                    android:title="QiNiuPlayer" />
+            </group>
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/option_player_view"
+        android:title="播放控件"
+        app:showAsAction="always">
+        <menu>
+            <group
+                android:id="@+id/group_player_view"
+                android:checkableBehavior="single">
+                <item
+                    android:id="@+id/option_player_view_v1"
+                    android:checked="true"
+                    android:title="PlayerView1" />
+                <item
+                    android:id="@+id/option_player_view_v2"
+                    android:checked="true"
+                    android:title="PlayerView2" />
+            </group>
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/option_control_view"
+        android:title="播放控件"
+        app:showAsAction="always">
+        <menu>
+            <group
+                android:id="@+id/group_control_view"
+                android:checkableBehavior="single">
+                <item
+                    android:id="@+id/option_control_view_c1"
+                    android:checked="true"
+                    android:title="PlayerView1" />
+                <item
+                    android:id="@+id/option_control_view_c2"
+                    android:checked="true"
+                    android:title="PlayerView2" />
+            </group>
+        </menu>
+    </item>
+
+</menu>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:id="@+id/video_play_flVideoContainer1"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:background="#000000">
+
+        <com.chengfu.fuplayer.widget.PlayerView
+            android:id="@+id/playerView1"
+            android:layout_width="match_parent"
+            android:layout_height="200dp" />
+
+        <com.chengfu.fuplayer.ui.DefaultControlView
+            android:id="@+id/controlView1"
+            android:layout_width="match_parent"
+            android:layout_height="200dp" />
+
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Spinner
+            android:id="@+id/spinner_player"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <Spinner
+            android:id="@+id/spinner_player_view"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"></LinearLayout>
+
+    <Button
+        android:id="@+id/player_menu"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_alignParentRight="true"
+        android:background="@mipmap/ic_menu"
+        android:padding="5dp" />
+
+    <FrameLayout
+        android:id="@+id/video_play_flVideoContainer2"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_alignParentBottom="true">
+
+        <com.chengfu.fuplayer.widget.PlayerView
+            android:id="@+id/playerView2"
+            android:layout_width="match_parent"
+            android:layout_height="200dp" />
+
+        <com.chengfu.fuplayer.ui.DefaultControlView
+            android:id="@+id/controlView2"
+            android:layout_width="match_parent"
+            android:layout_height="200dp" />
+
+    </FrameLayout>
+
+</LinearLayout>

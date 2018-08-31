@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/clRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
+
+    <FrameLayout
+        android:id="@+id/video_play_flVideoContainer"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:background="#000000">
+
+        <TextureView
+            android:id="@+id/textureView1"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </FrameLayout>
+
+    <Button
+        android:id="@+id/player_menu"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_alignParentRight="true"
+        android:background="@mipmap/ic_menu"
+        android:padding="5dp" />
+
+    <LinearLayout
+        android:id="@+id/flDetailsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/video_play_flVideoContainer"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/play"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="play" />
+
+        <Button
+            android:id="@+id/pause"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="pause" />
+
+        <Button
+            android:id="@+id/surface1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="surface1" />
+
+        <Button
+            android:id="@+id/surface2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="surface2" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/flDetailsContainer"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/path1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="path1" />
+
+        <Button
+            android:id="@+id/path2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="path2" />
+
+        <Button
+            android:id="@+id/ffff"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TEST" />
+
+        <Button
+            android:id="@+id/ff"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TEST" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_alignParentBottom="true"
+        android:background="#000000">
+
+        <TextureView
+            android:id="@+id/textureView2"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </FrameLayout>
+</RelativeLayout>

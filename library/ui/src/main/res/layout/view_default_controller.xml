@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/default_controller_llTopContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_default_controller_top"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/default_controller_imgBtnBack"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:background="@null"
+            android:padding="10dp"
+            android:src="@drawable/ic_default_controller_back" />
+
+        <TextView
+            android:id="@+id/default_controller_tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="10dp"
+            android:maxLines="1"
+            android:textColor="@color/white"
+            android:textSize="15sp" />
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/default_controller_imgBtnPlayPause"
+        android:layout_width="@dimen/default_controller_play_pause_btn_size_portrait"
+        android:layout_height="@dimen/default_controller_play_pause_btn_size_portrait"
+        android:layout_centerInParent="true"
+        android:background="@null"
+        android:scaleType="fitXY"
+        android:src="@drawable/selector_default_controller_play" />
+
+    <LinearLayout
+        android:id="@+id/default_controller_lvBrightnessRoot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/default_controller_imgViewBrightness"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:background="@drawable/ic_default_controller_brightness" />
+
+        <TextView
+            android:id="@+id/default_controller_tvBrightness"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0%"
+            android:textColor="@color/white"
+            android:textSize="22sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/default_controller_lvProgressRoot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/default_controller_imgViewProgress"
+            android:layout_width="42dp"
+            android:layout_height="24dp"
+            android:background="@drawable/ic_default_controller_forward" />
+
+        <TextView
+            android:id="@+id/default_controller_tvProgress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0%"
+            android:textColor="@color/white"
+            android:textSize="22sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/default_controller_lvVolumeRoot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/default_controller_imgViewVolume"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:background="@drawable/ic_default_controller_volume" />
+
+        <TextView
+            android:id="@+id/default_controller_tvVolume"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0%"
+            android:textColor="@color/white"
+            android:textSize="22sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/default_controller_lvBottomContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/bg_default_controller_bottom"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <RelativeLayout
+            android:id="@+id/default_controller_rvSeek"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <TextView
+                android:id="@+id/default_controller_tvCurrentTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:maxLines="1"
+                android:paddingLeft="10dp"
+                android:text="00:00"
+                android:textColor="#ffffff"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/default_controller_tvEndTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:maxLines="1"
+                android:text="00:00"
+                android:textColor="#ffffff"
+                android:textSize="11sp" />
+
+            <SeekBar
+                android:id="@+id/default_controller_seekBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_toLeftOf="@id/default_controller_tvEndTime"
+                android:layout_toRightOf="@id/default_controller_tvCurrentTime"
+                android:max="1000"
+                android:maxHeight="2dp"
+                android:minHeight="2dp"
+                android:paddingBottom="8dp"
+                android:paddingLeft="4dp"
+                android:paddingRight="4dp"
+                android:paddingTop="8dp"
+                android:progressDrawable="@drawable/bg_default_controller_seekbar"
+                android:thumb="@drawable/ic_default_controller_thumb" />
+
+        </RelativeLayout>
+
+        <ImageButton
+            android:id="@+id/default_controller_imgBtnSwitchScreen"
+            android:layout_width="36dp"
+            android:layout_height="33dp"
+            android:layout_marginRight="6dp"
+            android:background="@null"
+            android:padding="8dp"
+            android:scaleType="fitXY"
+            android:src="@drawable/ic_default_controller_full_screen" />
+    </LinearLayout>
+
+</RelativeLayout>

@@ -1,0 +1,107 @@
+[
+  {
+    "name": "点播视频",
+    "media_list": [
+      {
+        "name": "资源1(MP4,H264,360P)",
+        "path": "https://mov.bn.netease.com/open-movie/nos/mp4/2015/08/27/SB13F5AGJ_sd.mp4",
+        "tag": "mp4"
+      },
+      {
+        "name": "资源2(MP4,H264,360P)",
+        "path": "https://mov.bn.netease.com/open-movie/nos/mp4/2018/01/12/SD70VQJ74_sd.mp4",
+        "tag": "mp4"
+      },
+      {
+        "name": "资源3(M3U8,H264,TS,720*576)",
+        "path": "http://vod.hi.gzstv.com/vod_c4d4547568dd45e4b057217d9579a620.m3u8",
+        "tag": "mp4"
+      },
+      {
+        "name": "资源4(MP4,H264,1080P)",
+        "path": "http://221.228.226.23/11/t/j/v/b/tjvbwspwhqdmgouolposcsfafpedmb/sh.yinyuetai.com/691201536EE4912BF7E4F1E2C67B8119.mp4",
+        "tag": "mp4"
+      },
+      {
+        "name": "资源5(MP4,H264,1080P)",
+        "path": "http://storage.gzstv.net/uploads/media/WZZ/xjm-zhaopian.mp4",
+        "tag": "mp4"
+      }
+    ]
+  },
+  {
+    "name": "RTMP",
+    "media_list": [
+      {
+        "name": "资源1",
+        "path": "rtmp://pull-g.kktv8.com/livekktv/100987038",
+        "tag": "rtmp"
+      },
+      {
+        "name": "资源2",
+        "path": "rtmp://live.hkstv.hk.lxdns.com/live/hks",
+        "tag": "rtmp"
+      }
+    ]
+  },
+  {
+    "name": "HLS",
+    "media_list": [
+      {
+        "name": "Apple 4x3 basic stream",
+        "path": "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8",
+        "tag": "m3u8"
+      },
+      {
+        "name": "Apple 16x9 basic stream",
+        "path": "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8",
+        "tag": "m3u8"
+      },
+      {
+        "name": "Apple master playlist advanced (TS)",
+        "path": "https://tungsten.aaplimg.com/VOD/bipbop_adv_example_v2/master.m3u8",
+        "tag": "m3u8"
+      },
+      {
+        "name": "Apple master playlist advanced (fMP4)",
+        "path": "https://tungsten.aaplimg.com/VOD/bipbop_adv_fmp4_example/master.m3u8",
+        "tag": "m3u8"
+      },
+      {
+        "name": "Apple TS media playlist",
+        "path": "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/gear1/prog_index.m3u8",
+        "tag": "m3u8"
+      },
+      {
+        "name": "Apple AAC media playlist",
+        "path": "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/gear0/prog_index.m3u8",
+        "tag": "m3u8"
+      },
+      {
+        "name": "Apple ID3 metadata",
+        "path": "http://devimages.apple.com/samplecode/adDemo/ad.m3u8",
+        "tag": "m3u8"
+      }
+    ]
+  },
+  {
+    "name": "RTSP",
+    "media_list": [
+      {
+        "name": "资源1",
+        "path": "rtsp://184.72.239.149/vod/mp4://BigBuckBunny_175k.mov",
+        "tag": "mov"
+      }
+    ]
+  },
+  {
+    "name": "HTTP-FLV",
+    "media_list": [
+      {
+        "name": "资源1",
+        "path": "rtsp://184.72.239.149/vod/mp4://BigBuckBunny_175k.mov",
+        "tag": "mov"
+      }
+    ]
+  }
+]

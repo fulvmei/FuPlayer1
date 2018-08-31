@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="white">#FFFFFF</color>
+
+    <color name="buttonBg">#CCCCCC</color>
+    <color name="buttonTextColor">#000000</color>
+
+    <color name="controller_bg_dark">#66000000</color>
+    <color name="controller_bg_light">#00000000</color>
+
+    <color name="edit_base_line_color">#77ffffff</color>
+
+    <color name="default_controller_seekbar_bg">#666666</color>
+    <color name="default_controller_seekbar_progress">#FF5722</color>
+    <color name="default_controller_seekbar_progress2">#cccccc</color>
+
+    <color name="player_view_edit_mode_bg">#FF7F7F7F</color>
+
+</resources>

@@ -1,0 +1,15 @@
+include ':demos:demo'
+include ':demos:demo-exo'
+include ':demos:demo-sys'
+include ':demos:demo-qiniu'
+
+include ':library:core'
+include ':library:ui'
+
+include ':extensions:exoplayer'
+include ':extensions:vlcplayer'
+include ':extensions:ijkplayer'
+include ':extensions:qiniuplayer'
+
+include 'others:gsyvideoplayer'
+include 'others:jiaozivideoplayer'
