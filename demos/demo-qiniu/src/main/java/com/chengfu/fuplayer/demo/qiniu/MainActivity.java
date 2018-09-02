@@ -26,11 +26,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        playerListener = new PlayerListener();
+
         textureView = findViewById(R.id.textureView);
 
 //        textureView.setSurfaceTextureListener(playerListener);
-
-        playerListener = new PlayerListener();
 
 //        mediaPlayer = new PLMediaPlayer(getApplicationContext());
 //        mediaPlayer.setOnPreparedListener(playerListener);

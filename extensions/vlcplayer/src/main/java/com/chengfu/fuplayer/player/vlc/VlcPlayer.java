@@ -32,7 +32,6 @@ public final class VlcPlayer extends AbsPlayer {
 
     private boolean mSeekable;
     private boolean mPlayWhenReady;
-    private boolean mPreparing;
 
     private int mCurrentState = -1;
 
@@ -77,14 +76,14 @@ public final class VlcPlayer extends AbsPlayer {
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
                 mCurrentState != STATE_IDLE &&
-                !mPreparing);
+                mCurrentState != STATE_PREPARING);
     }
 
     private void openMedia() {
         if (mMediaSource == null || (mMediaSource.getPath() == null && mMediaSource.getUri() == null)) {
             FuLog.w(TAG, "this mediaSource is null or path and uri both are empty", new NullPointerException("mediaSource is null"));
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
             return;
         }
 
@@ -100,20 +99,19 @@ public final class VlcPlayer extends AbsPlayer {
                 }
             }
             mMediaPlayer.prepareAsync();
-            mPreparing = true;
 
-            setPlayerState(mPlayWhenReady, STATE_BUFFERING);
+            setPlayerState(mPlayWhenReady, STATE_PREPARING);
             FuLog.i(TAG, "Set media source for the player: source=" + mMediaSource.toString());
         } catch (IOException e) {
             e.printStackTrace();
             FuLog.e(TAG, "Unable to open content: " + mMediaSource.toString(), e);
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
             FuLog.e(TAG, "Unable to open content: " + mMediaSource.toString(), e);
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
             return;
         }
     }
@@ -124,7 +122,7 @@ public final class VlcPlayer extends AbsPlayer {
         }
         mPlayWhenReady = playWhenReady;
         mCurrentState = state;
-        submitStateChanged(state);
+        submitStateChanged(playWhenReady, state);
     }
 
     @Override
@@ -310,7 +308,7 @@ public final class VlcPlayer extends AbsPlayer {
     final MediaPlayer.OnPreparedListener mPreparedListener = new MediaPlayer.OnPreparedListener() {
         public void onPrepared(MediaPlayer mp) {
             FuLog.d(TAG, "onPrepared...");
-            mPreparing = false;
+
             long seekToPosition = mSeekWhenPrepared;  // mSeekWhenPrepared may be changed after seekTo() call
             if (seekToPosition != 0) {
                 seekTo(seekToPosition);
@@ -342,6 +340,10 @@ public final class VlcPlayer extends AbsPlayer {
             new MediaPlayer.OnInfoListener() {
                 public boolean onInfo(MediaPlayer mp, int what, int extra) {
                     switch (what) {
+                        case MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START:
+                            FuLog.i(TAG, "onInfo : video_rendering_start");
+                            submitRenderedFirstFrame();
+                            break;
                         case MediaPlayer.MEDIA_INFO_BUFFERING_START:
                             FuLog.i(TAG, "onInfo : buffering_start");
                             setPlayerState(mPlayWhenReady, STATE_BUFFERING);
@@ -371,8 +373,8 @@ public final class VlcPlayer extends AbsPlayer {
             new MediaPlayer.OnErrorListener() {
                 public boolean onError(MediaPlayer mp, int framework_err, int impl_err) {
                     FuLog.d(TAG, "Error : code" + getErrorCode(framework_err));
-                    setPlayerState(mPlayWhenReady, STATE_IDLE);
                     submitError(FuPlayerError.create(getErrorCode(framework_err)));
+                    setPlayerState(mPlayWhenReady, STATE_IDLE);
                     return true;
                 }
             };

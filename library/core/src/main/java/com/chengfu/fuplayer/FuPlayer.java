@@ -1,18 +1,12 @@
 package com.chengfu.fuplayer;
 
-import android.net.Uri;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.Surface;
-import android.view.SurfaceHolder;
 
-import com.chengfu.fuplayer.controller.IPlayerController;
 import com.chengfu.fuplayer.player.AbsPlayer;
 import com.chengfu.fuplayer.player.IPlayer;
-import com.chengfu.fuplayer.player.sys.SysPlayerFactory;
+import com.chengfu.fuplayer.widget.IPlayerControllerView;
 import com.chengfu.fuplayer.widget.IPlayerView;
-
-import java.util.Map;
 
 
 public class FuPlayer implements IPlayer {
@@ -23,7 +17,7 @@ public class FuPlayer implements IPlayer {
 
     private AbsPlayer mPlayer;
     private IPlayerView mPlayerView;
-    private IPlayerController mPlayerController;
+    private IPlayerControllerView mPlayerController;
 
     private Surface mSurface;
 
@@ -52,8 +46,9 @@ public class FuPlayer implements IPlayer {
         if (mMediaSource != null) {
             mPlayer.setMediaSource(mMediaSource);
         }
-
-        mPlayer.setVideoSurface(mSurface);
+        if (mPlayerView != null) {
+            mPlayerView.setPlayer(mPlayer);
+        }
         mPlayer.seekTo(mCurrentPosition);
         mPlayer.setPlayWhenReady(true);
     }
@@ -67,25 +62,17 @@ public class FuPlayer implements IPlayer {
             return;
         }
         if (mPlayerView != null) {
-            mPlayerView.setSurfaceCallBack(null);
+            mPlayerView.setPlayer(null);
         }
-
-        if (mPlayer != null) {
-            mPlayer.setVideoSurface(playerView.getSurface());
-        }
-
-        playerView.setSurfaceCallBack(mSurfaceCallBack);
-
-        playerView.setPlayerController(mPlayerController);
-
         mPlayerView = playerView;
+        mPlayerView.setPlayer(mPlayer);
     }
 
     public IPlayerView getPlayerView() {
         return mPlayerView;
     }
 
-    public void setPlayerController(IPlayerController playerController) {
+    public void setPlayerController(IPlayerControllerView playerController) {
         if (mPlayerController == playerController) {
             return;
         }
@@ -97,12 +84,12 @@ public class FuPlayer implements IPlayer {
 
         playerController.setPlayer(this);
         if (mPlayerView != null) {
-            mPlayerView.setPlayerController(playerController);
+//            mPlayerView.setPlayerControllerView(playerController);
         }
         attachMediaController();
     }
 
-    public IPlayerController getPlayerController() {
+    public IPlayerControllerView getPlayerController() {
         return mPlayerController;
     }
 
@@ -158,25 +145,6 @@ public class FuPlayer implements IPlayer {
 //            mPlayer.setOnBufferingListener(null);
 //        }
     }
-
-    private IPlayerView.SurfaceCallBack mSurfaceCallBack = new IPlayerView.SurfaceCallBack() {
-
-        @Override
-        public void onSurfaceAvailable(Surface surface) {
-            if (isPlayerAvailable()) {
-                mPlayer.setVideoSurface(surface);
-            }
-            mSurface = surface;
-        }
-
-        @Override
-        public void onSurfaceDestroyed(Surface surface) {
-            if (isPlayerAvailable()) {
-                mPlayer.setVideoSurface(null);
-            }
-            mSurface = null;
-        }
-    };
 
 //    private TimerCounterProxy.OnCounterUpdateListener mOnCounterUpdateListener =
 //            new TimerCounterProxy.OnCounterUpdateListener() {
@@ -391,7 +359,7 @@ public class FuPlayer implements IPlayer {
 
     @Override
     public void setMediaSource(MediaSource mediaSource) {
-        mMediaSource=mediaSource;
+        mMediaSource = mediaSource;
         mPlayer.setMediaSource(mediaSource);
     }
 
@@ -461,6 +429,4 @@ public class FuPlayer implements IPlayer {
         if (isPlayerAvailable())
             mPlayer.seekTo(msc);
     }
-
-
 }

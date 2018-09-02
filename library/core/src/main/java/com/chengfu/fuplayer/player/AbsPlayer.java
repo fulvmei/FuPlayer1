@@ -20,44 +20,44 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
 
     private static final String TAG = "AbsPlayer";
 
-    private final ComponentListener componentListener = new ComponentListener();
+    private final ComponentListener mComponentListener = new ComponentListener();
 
     private SurfaceHolder mSurfaceHolder;
     private TextureView mTextureView;
 
-    protected final CopyOnWriteArraySet<EventListener> eventListeners = new CopyOnWriteArraySet<>();
-    protected final CopyOnWriteArraySet<VideoListener> videoListeners = new CopyOnWriteArraySet<>();
-    protected final CopyOnWriteArraySet<TextOutput> textListeners = new CopyOnWriteArraySet<>();
+    protected final CopyOnWriteArraySet<EventListener> mEventListeners = new CopyOnWriteArraySet<>();
+    protected final CopyOnWriteArraySet<VideoListener> mVideoListeners = new CopyOnWriteArraySet<>();
+    protected final CopyOnWriteArraySet<TextOutput> mTextListeners = new CopyOnWriteArraySet<>();
 
     @Override
     public void addEventListener(EventListener listener) {
-        eventListeners.add(listener);
+        mEventListeners.add(listener);
     }
 
     @Override
     public void removeEventListener(EventListener listener) {
-        eventListeners.remove(listener);
+        mEventListeners.remove(listener);
     }
 
     @Override
     public void addVideoListener(VideoListener listener) {
-        videoListeners.add(listener);
+        mVideoListeners.add(listener);
     }
 
     @Override
     public void removeVideoListener(VideoListener listener) {
-        videoListeners.remove(listener);
+        mVideoListeners.remove(listener);
     }
 
 
     @Override
     public void addTextOutput(TextOutput listener) {
-        textListeners.add(listener);
+        mTextListeners.add(listener);
     }
 
     @Override
     public void removeTextOutput(TextOutput listener) {
-        textListeners.remove(listener);
+        mTextListeners.remove(listener);
     }
 
     @Override
@@ -82,7 +82,7 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
         if (surfaceHolder == null) {
             setVideoSurface(null);
         } else {
-            surfaceHolder.addCallback(componentListener);
+            surfaceHolder.addCallback(mComponentListener);
             Surface surface = surfaceHolder.getSurface();
             setVideoSurface(surface != null && surface.isValid() ? surface : null);
         }
@@ -100,14 +100,14 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
             return;
         }
         removeSurfaceCallbacks();
-       mTextureView = textureView;
+        mTextureView = textureView;
         if (textureView == null) {
             setVideoSurface(null);
         } else {
             if (textureView.getSurfaceTextureListener() != null) {
                 Log.w(TAG, "Replacing existing SurfaceTextureListener.");
             }
-            textureView.setSurfaceTextureListener(componentListener);
+            textureView.setSurfaceTextureListener(mComponentListener);
             SurfaceTexture surfaceTexture = textureView.isAvailable() ? textureView.getSurfaceTexture()
                     : null;
             setVideoSurface(surfaceTexture == null ? null : new Surface(surfaceTexture));
@@ -116,7 +116,7 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
 
     private void removeSurfaceCallbacks() {
         if (mTextureView != null) {
-            if (mTextureView.getSurfaceTextureListener() != componentListener) {
+            if (mTextureView.getSurfaceTextureListener() != mComponentListener) {
                 FuLog.w(TAG, "SurfaceTextureListener already unset or replaced.");
             } else {
                 mTextureView.setSurfaceTextureListener(null);
@@ -124,45 +124,44 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
             mTextureView = null;
         }
         if (mSurfaceHolder != null) {
-            mSurfaceHolder.removeCallback(componentListener);
+            mSurfaceHolder.removeCallback(mComponentListener);
             mSurfaceHolder = null;
         }
     }
 
-    protected final void submitStateChanged(int state) {
-        for (EventListener listener : eventListeners) {
-            listener.onStateChanged(state);
+    protected final void submitStateChanged(boolean playWhenReady, int playbackState) {
+        for (EventListener listener : mEventListeners) {
+            listener.onStateChanged(playWhenReady, playbackState);
         }
     }
 
     protected final void submitBufferingUpdate(int percent) {
-        for (EventListener listener : eventListeners) {
+        for (EventListener listener : mEventListeners) {
             listener.onBufferingUpdate(percent);
         }
     }
 
-    protected final void submitLoadingChanged(boolean isLoading) {
-        for (EventListener listener : eventListeners) {
-            listener.onLoadingChanged(isLoading);
-        }
-    }
-
-
     protected final void submitSeekComplete() {
-        for (EventListener listener : eventListeners) {
+        for (EventListener listener : mEventListeners) {
             listener.onSeekComplete();
         }
     }
 
     protected final void submitError(FuPlayerError error) {
-        for (EventListener listener : eventListeners) {
+        for (EventListener listener : mEventListeners) {
             listener.onError(error);
         }
     }
 
     protected final void submitVideoSizeChanged(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
-        for (VideoListener listener : videoListeners) {
+        for (VideoListener listener : mVideoListeners) {
             listener.onVideoSizeChanged(width, height, unappliedRotationDegrees, pixelWidthHeightRatio);
+        }
+    }
+
+    protected final void submitRenderedFirstFrame() {
+        for (VideoListener listener : mVideoListeners) {
+            listener.onRenderedFirstFrame();
         }
     }
 

@@ -21,9 +21,6 @@
             <option value="$PROJECT_DIR$/library" />
             <option value="$PROJECT_DIR$/library/core" />
             <option value="$PROJECT_DIR$/library/ui" />
-            <option value="$PROJECT_DIR$/others" />
-            <option value="$PROJECT_DIR$/others/gsyvideoplayer" />
-            <option value="$PROJECT_DIR$/others/jiaozivideoplayer" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

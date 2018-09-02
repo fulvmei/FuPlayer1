@@ -90,9 +90,11 @@ public interface IPlayer {
     }
 
     int STATE_IDLE = 1;
-    int STATE_BUFFERING = 2;
+    int STATE_PREPARING = 2;
     int STATE_READY = 3;
-    int STATE_ENDED = 4;
+    int STATE_BUFFERING = 4;
+    int STATE_ENDED = 5;
+    int STATE_ERROR = 6;
 
     int VIDEO_SCALING_MODE_SCALE_TO_FIT = 0;
     int VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING = 1;
@@ -100,44 +102,13 @@ public interface IPlayer {
 
     interface EventListener {
 
-        void onStateChanged(int state);
+        void onStateChanged(boolean playWhenReady, int playbackState);
 
         void onBufferingUpdate(int percent);
-
-        void onLoadingChanged(boolean isLoading);
 
         void onSeekComplete();
 
         void onError(FuPlayerError error);
-    }
-
-    abstract class DefaultEventListener implements EventListener {
-
-
-        @Override
-        public void onStateChanged(int state) {
-
-        }
-
-        @Override
-        public void onBufferingUpdate(int percent) {
-
-        }
-
-        @Override
-        public void onLoadingChanged(boolean isLoading) {
-
-        }
-
-        @Override
-        public void onSeekComplete() {
-
-        }
-
-        @Override
-        public void onError(FuPlayerError error) {
-
-        }
     }
 
     VideoComponent getVideoComponent();

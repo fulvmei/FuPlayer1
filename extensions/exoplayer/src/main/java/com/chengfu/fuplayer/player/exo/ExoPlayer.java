@@ -2,6 +2,7 @@ package com.chengfu.fuplayer.player.exo;
 
 import android.content.Context;
 import android.net.Uri;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.view.Surface;
 
@@ -17,6 +18,7 @@ import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.RenderersFactory;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.Timeline;
+import com.google.android.exoplayer2.ext.rtmp.RtmpDataSourceFactory;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.extractor.ExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
@@ -24,6 +26,7 @@ import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
+import com.google.android.exoplayer2.source.hls.DefaultHlsDataSourceFactory;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource;
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
@@ -32,13 +35,14 @@ import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
+import com.google.android.exoplayer2.video.VideoListener;
 
 import java.io.IOException;
 import java.util.Map;
 
 public class ExoPlayer extends AbsPlayer {
 
-    public static final String TAG = "SysPlayer";
+    public static final String TAG = "ExoPlayer";
 
     private final Context mContext;
     private SimpleExoPlayer mMediaPlayer;
@@ -79,67 +83,83 @@ public class ExoPlayer extends AbsPlayer {
         simpleExoPlayer.setPlayWhenReady(mPlayWhenReady);
 
         simpleExoPlayer.addListener(mEventListener);
-        simpleExoPlayer.setVideoListener(mVideoListener);
+        simpleExoPlayer.addVideoListener(mVideoListener);
 
         return simpleExoPlayer;
     }
 
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
-                mCurrentState != STATE_IDLE);
+                mCurrentState == STATE_READY
+                && mCurrentState == STATE_BUFFERING
+                && mCurrentState == STATE_ENDED);
     }
 
-    private MediaSource getMediaSource(Uri uri) {
-        int contentType = Util.inferContentType(uri);
+    private MediaSource getMediaSource(com.chengfu.fuplayer.MediaSource mediaSource) {
+        Uri uri;
+        if (mediaSource.getPath() != null) {
+            uri = Uri.parse(mMediaSource.getPath());
+        } else {
+            uri = mMediaSource.getUri();
+        }
         DefaultDataSourceFactory dataSourceFactory =
                 new DefaultDataSourceFactory(mContext,
                         Util.getUserAgent(mContext, mContext.getPackageName()), mBandwidthMeter);
+        if (mediaSource.getType() == com.chengfu.fuplayer.MediaSource.MEDIA_TYPE_DASH) {
+            return new DashMediaSource.Factory(new DefaultDashChunkSource.Factory(dataSourceFactory), dataSourceFactory).createMediaSource(uri);
+        } else if (mediaSource.getType() == com.chengfu.fuplayer.MediaSource.MEDIA_TYPE_SS) {
+            return new SsMediaSource.Factory(new DefaultSsChunkSource.Factory(dataSourceFactory), dataSourceFactory).createMediaSource(uri);
+        } else if (mediaSource.getType() == com.chengfu.fuplayer.MediaSource.MEDIA_TYPE_HLS) {
+            return new HlsMediaSource.Factory(new DefaultHlsDataSourceFactory(dataSourceFactory)).createMediaSource(uri);
+        } else if (mediaSource.getType() == com.chengfu.fuplayer.MediaSource.MEDIA_TYPE_RTMP) {
+            return new ExtractorMediaSource.Factory(new RtmpDataSourceFactory()).createMediaSource(uri);
+        }
+
+        String scheme = uri.getScheme();
+        if (scheme != null && scheme.contains("rtmp")) {
+            return new ExtractorMediaSource.Factory(new RtmpDataSourceFactory()).createMediaSource(uri);
+        }
+
+        int contentType = Util.inferContentType(uri);
         switch (contentType) {
             case C.TYPE_DASH:
-                DefaultDashChunkSource.Factory factory = new DefaultDashChunkSource.Factory(dataSourceFactory);
-                return new DashMediaSource(uri, dataSourceFactory, factory, null, null);
+                return new DashMediaSource.Factory(new DefaultDashChunkSource.Factory(dataSourceFactory), dataSourceFactory).createMediaSource(uri);
             case C.TYPE_SS:
-                DefaultSsChunkSource.Factory ssFactory = new DefaultSsChunkSource.Factory(dataSourceFactory);
-                return new SsMediaSource(uri, dataSourceFactory, ssFactory, null, null);
+                return new SsMediaSource.Factory(new DefaultSsChunkSource.Factory(dataSourceFactory), dataSourceFactory).createMediaSource(uri);
             case C.TYPE_HLS:
-                return new HlsMediaSource(uri, dataSourceFactory, null, null);
-
+                return new HlsMediaSource.Factory(new DefaultHlsDataSourceFactory(dataSourceFactory)).createMediaSource(uri);
             case C.TYPE_OTHER:
             default:
-                // This is the MediaSource representing the media to be played.
-                ExtractorsFactory extractorsFactory = new DefaultExtractorsFactory();
-                return new ExtractorMediaSource(uri,
-                        dataSourceFactory, extractorsFactory, null, null);
+                return new ExtractorMediaSource.Factory(dataSourceFactory).createMediaSource(uri);
         }
     }
 
     private void openMedia() {
         if (mMediaSource == null || (mMediaSource.getPath() == null && mMediaSource.getUri() == null)) {
             FuLog.w(TAG, "this mediaSource is null or path and uri both are empty", new NullPointerException("mediaSource is null"));
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+            setPlayerState(mPlayWhenReady, STATE_ERROR);
             return;
         }
-
-        mMediaPlayer = createPlayer();
-        if (mMediaSource.getPath() != null) {
-            mMediaPlayer.prepare(getMediaSource(Uri.parse(mMediaSource.getPath())));
-        } else {
-            mMediaPlayer.prepare(getMediaSource(mMediaSource.getUri()));
+        if (mMediaPlayer == null) {
+            mMediaPlayer = createPlayer();
         }
-//        mPreparing = true;
+
+        mMediaPlayer.prepare(getMediaSource(mMediaSource));
 
         setPlayerState(mPlayWhenReady, STATE_BUFFERING);
         FuLog.w(TAG, "Set media source for the player: source=" + mMediaSource.toString());
     }
 
-    private void setPlayerState(boolean playWhenReady, int state) {
-        if (mPlayWhenReady == playWhenReady && mCurrentState == state) {
+    private void setPlayerState(boolean playWhenReady, int playbackState) {
+        if (mPlayWhenReady == playWhenReady && mCurrentState == playbackState) {
             return;
         }
+        FuLog.i(TAG, "onPlayerStateChanged : playWhenReady = " + playWhenReady
+                + ", playbackState = " + playbackState);
         mPlayWhenReady = playWhenReady;
-        mCurrentState = state;
-        submitStateChanged(state);
+        mCurrentState = playbackState;
+        submitStateChanged(playWhenReady, playbackState);
     }
 
     @Override
@@ -186,10 +206,7 @@ public class ExoPlayer extends AbsPlayer {
 
     @Override
     public boolean getPlayWhenReady() {
-        if (mMediaPlayer != null) {
-            mMediaPlayer.getPlayWhenReady();
-        }
-        return false;
+        return mPlayWhenReady;
     }
 
     @Override
@@ -280,8 +297,8 @@ public class ExoPlayer extends AbsPlayer {
     public void stop() {
         if (mMediaPlayer != null) {
             mMediaPlayer.stop();
-            mMediaPlayer.release();
-            mMediaPlayer = null;
+//            mMediaPlayer.release();
+//            mMediaPlayer = null;
             setPlayerState(mPlayWhenReady, STATE_IDLE);
         }
     }
@@ -299,7 +316,7 @@ public class ExoPlayer extends AbsPlayer {
         }
     }
 
-    private final SimpleExoPlayer.VideoListener mVideoListener = new SimpleExoPlayer.VideoListener() {
+    private final VideoListener mVideoListener = new VideoListener() {
         @Override
         public void onVideoSizeChanged(int width, int height,
                                        int unappliedRotationDegrees, float pixelWidthHeightRatio) {
@@ -309,13 +326,15 @@ public class ExoPlayer extends AbsPlayer {
 
         @Override
         public void onRenderedFirstFrame() {
-            FuLog.d(TAG, "onRenderedFirstFrame");
+            FuLog.i(TAG, "onInfo : video_rendering_start");
+            submitRenderedFirstFrame();
         }
     };
 
     private final Player.EventListener mEventListener = new Player.EventListener() {
+
         @Override
-        public void onTimelineChanged(Timeline timeline, Object manifest) {
+        public void onTimelineChanged(Timeline timeline, @Nullable Object manifest, int reason) {
             FuLog.d(TAG, "onTimelineChanged...");
         }
 
@@ -335,13 +354,28 @@ public class ExoPlayer extends AbsPlayer {
 
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-            FuLog.d(TAG, "onPlayerStateChanged : playWhenReady = " + playWhenReady
-                    + ", playbackState = " + playbackState);
-            setPlayerState(playWhenReady, playbackState);
+            if (playbackState == Player.STATE_IDLE) {
+                if (mMediaPlayer.getPlaybackError() != null) {
+                    setPlayerState(playWhenReady, STATE_ERROR);
+                } else {
+                    setPlayerState(playWhenReady, STATE_IDLE);
+                }
+            } else if (playbackState == Player.STATE_BUFFERING) {
+                setPlayerState(playWhenReady, STATE_BUFFERING);
+            } else if (playbackState == Player.STATE_READY) {
+                setPlayerState(playWhenReady, STATE_READY);
+            } else if (playbackState == Player.STATE_ENDED) {
+                setPlayerState(playWhenReady, STATE_ENDED);
+            }
         }
 
         @Override
         public void onRepeatModeChanged(int repeatMode) {
+
+        }
+
+        @Override
+        public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
 
         }
 
@@ -351,7 +385,6 @@ public class ExoPlayer extends AbsPlayer {
                 submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_UNKNOWN));
                 return;
             }
-            FuLog.e(TAG, error.getMessage() == null ? "" : error.getMessage());
             int type = error.type;
             switch (type) {
                 case ExoPlaybackException.TYPE_SOURCE:
@@ -367,13 +400,18 @@ public class ExoPlayer extends AbsPlayer {
         }
 
         @Override
-        public void onPositionDiscontinuity() {
-
+        public void onPositionDiscontinuity(int reason) {
+            FuLog.d(TAG, "onPositionDiscontinuity : reason=" + reason);
         }
 
         @Override
         public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
             FuLog.d(TAG, "onPlaybackParametersChanged : " + playbackParameters.toString());
+        }
+
+        @Override
+        public void onSeekProcessed() {
+
         }
     };
 }

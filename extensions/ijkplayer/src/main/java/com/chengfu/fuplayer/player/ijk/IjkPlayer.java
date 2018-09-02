@@ -2,9 +2,6 @@ package com.chengfu.fuplayer.player.ijk;
 
 import android.content.Context;
 import android.media.AudioManager;
-import android.net.Uri;
-
-import android.text.TextUtils;
 import android.view.Surface;
 
 import com.chengfu.fuplayer.FuLog;
@@ -13,7 +10,6 @@ import com.chengfu.fuplayer.MediaSource;
 import com.chengfu.fuplayer.player.AbsPlayer;
 
 import java.io.IOException;
-import java.util.Map;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
@@ -35,7 +31,6 @@ public class IjkPlayer extends AbsPlayer {
 
     private boolean mSeekable;
     private boolean mPlayWhenReady;
-    private boolean mPreparing;
 
     private int mCurrentState = -1;
 
@@ -96,14 +91,14 @@ public class IjkPlayer extends AbsPlayer {
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
                 mCurrentState != STATE_IDLE &&
-                !mPreparing);
+                mCurrentState != STATE_PREPARING);
     }
 
     private void openMedia() {
         if (mMediaSource == null || (mMediaSource.getPath() == null && mMediaSource.getUri() == null)) {
             FuLog.w(TAG, "this mediaSource is null or path and uri both are empty", new NullPointerException("mediaSource is null"));
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
             return;
         }
 
@@ -119,20 +114,19 @@ public class IjkPlayer extends AbsPlayer {
                 }
             }
             mMediaPlayer.prepareAsync();
-            mPreparing = true;
 
-            setPlayerState(mPlayWhenReady, STATE_BUFFERING);
+            setPlayerState(mPlayWhenReady, STATE_PREPARING);
             FuLog.i(TAG, "Set media source for the player: source=" + mMediaSource.toString());
         } catch (IOException e) {
             e.printStackTrace();
             FuLog.e(TAG, "Unable to open content: " + mMediaSource.toString(), e);
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
             FuLog.e(TAG, "Unable to open content: " + mMediaSource.toString(), e);
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
             return;
         }
     }
@@ -143,7 +137,7 @@ public class IjkPlayer extends AbsPlayer {
         }
         mPlayWhenReady = playWhenReady;
         mCurrentState = state;
-        submitStateChanged(state);
+        submitStateChanged(playWhenReady, state);
     }
 
     @Override
@@ -327,7 +321,6 @@ public class IjkPlayer extends AbsPlayer {
         public void onPrepared(IMediaPlayer mp) {
             FuLog.d(TAG, "onPrepared...");
 
-            mPreparing = false;
             long seekToPosition = mSeekWhenPrepared;  // mSeekWhenPrepared may be changed after seekTo() call
             if (seekToPosition != 0) {
                 seekTo(seekToPosition);
@@ -360,13 +353,17 @@ public class IjkPlayer extends AbsPlayer {
             new IjkMediaPlayer.OnInfoListener() {
                 public boolean onInfo(IMediaPlayer mp, int what, int extra) {
                     switch (what) {
+                        case IjkMediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START:
+                            FuLog.i(TAG, "onInfo : video_rendering_start");
+                            submitRenderedFirstFrame();
+                            break;
                         case IjkMediaPlayer.MEDIA_INFO_BUFFERING_START:
                             FuLog.i(TAG, "onInfo : buffering_start");
-                            submitLoadingChanged(true);
+                            setPlayerState(mPlayWhenReady, STATE_BUFFERING);
                             break;
                         case IjkMediaPlayer.MEDIA_INFO_BUFFERING_END:
                             FuLog.i(TAG, "onInfo : buffering_end");
-                            submitLoadingChanged(false);
+                            setPlayerState(mPlayWhenReady, STATE_READY);
                             break;
                         case IjkMediaPlayer.MEDIA_INFO_NOT_SEEKABLE:
                             mSeekable = false;
@@ -389,8 +386,8 @@ public class IjkPlayer extends AbsPlayer {
             new IjkMediaPlayer.OnErrorListener() {
                 public boolean onError(IMediaPlayer mp, int framework_err, int impl_err) {
                     FuLog.d(TAG, "Error : code" + getErrorCode(framework_err));
-                    setPlayerState(mPlayWhenReady, STATE_IDLE);
                     submitError(FuPlayerError.create(getErrorCode(framework_err)));
+                    setPlayerState(mPlayWhenReady, STATE_IDLE);
                     return true;
                 }
             };

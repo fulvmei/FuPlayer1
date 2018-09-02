@@ -11,5 +11,3 @@ include ':extensions:vlcplayer'
 include ':extensions:ijkplayer'
 include ':extensions:qiniuplayer'
 
-include 'others:gsyvideoplayer'
-include 'others:jiaozivideoplayer'

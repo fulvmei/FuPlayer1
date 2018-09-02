@@ -14,13 +14,13 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.chengfu.fuplayer.FuPlayerError;
-import com.chengfu.fuplayer.controller.IPlayerController;
 import com.chengfu.fuplayer.player.IPlayer;
+import com.chengfu.fuplayer.widget.IPlayerControllerView;
 
 import java.util.Formatter;
 import java.util.Locale;
 
-public class DefaultControlView extends RelativeLayout implements IPlayerController, View.OnClickListener, SeekBar.OnSeekBarChangeListener {
+public class DefaultControlView extends RelativeLayout implements IPlayerControllerView, View.OnClickListener, SeekBar.OnSeekBarChangeListener {
 
     public interface OnShowHideChangedListener {
         void onShowHideChanged(boolean show);
@@ -370,7 +370,7 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
 
 
         @Override
-        public void onStateChanged(int state) {
+        public void onStateChanged(boolean playWhenReady, int playbackState) {
 
         }
 
@@ -379,10 +379,6 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
 
         }
 
-        @Override
-        public void onLoadingChanged(boolean isLoading) {
-
-        }
 
         @Override
         public void onSeekComplete() {

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/clRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -9,24 +10,30 @@
     <FrameLayout
         android:id="@+id/video_play_flVideoContainer1"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="300dp"
         android:background="#000000">
 
-        <com.chengfu.fuplayer.widget.PlayerView
+        <com.chengfu.fuplayer.ui.PlayerView
             android:id="@+id/playerView1"
             android:layout_width="match_parent"
-            android:layout_height="200dp" />
+            android:layout_height="match_parent"
+            android:background="#000000"
+            app:resize_mode="zoom"
+            app:show_buffering="true"
+            app:shutter_background_color="#000000" />
 
         <com.chengfu.fuplayer.ui.DefaultControlView
             android:id="@+id/controlView1"
             android:layout_width="match_parent"
-            android:layout_height="200dp" />
+            android:layout_height="match_parent"
+            android:visibility="gone" />
 
     </FrameLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <Spinner
@@ -37,6 +44,25 @@
 
         <Spinner
             android:id="@+id/spinner_player_view"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <Spinner
+            android:id="@+id/spinner_mode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <Spinner
+            android:id="@+id/spinner_surfcae"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1" />
@@ -59,17 +85,19 @@
         android:id="@+id/video_play_flVideoContainer2"
         android:layout_width="match_parent"
         android:layout_height="200dp"
-        android:layout_alignParentBottom="true">
+        android:layout_alignParentBottom="true"
+        android:background="#000000">
 
-        <com.chengfu.fuplayer.widget.PlayerView
+        <com.chengfu.fuplayer.ui.PlayerView
             android:id="@+id/playerView2"
             android:layout_width="match_parent"
-            android:layout_height="200dp" />
+            android:layout_height="match_parent" />
 
         <com.chengfu.fuplayer.ui.DefaultControlView
             android:id="@+id/controlView2"
             android:layout_width="match_parent"
-            android:layout_height="200dp" />
+            android:layout_height="match_parent"
+            android:visibility="gone" />
 
     </FrameLayout>
 

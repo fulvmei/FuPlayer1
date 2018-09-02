@@ -12,12 +12,16 @@ import android.view.View;
 import com.chengfu.fuplayer.MediaSource;
 import com.chengfu.fuplayer.player.sys.SysPlayer;
 
-public class MainActivity extends AppCompatActivity {
-    String path = "https://mov.bn.netease.com/open-movie/nos/mp4/2015/08/27/SB13F5AGJ_sd.mp4";
+import java.io.IOException;
 
-    SysPlayer player;
+public class MainActivity extends AppCompatActivity implements MediaPlayer.OnPreparedListener, MediaPlayer.OnInfoListener {
+    String path = "https://media.w3.org/2010/05/sintel/trailer.mp4";
+
+    MediaPlayer player;
     TextureView textureView;
     Surface surface;
+
+    AspectRatioFrameLayout f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,12 +29,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         textureView = findViewById(R.id.textureView);
+        f = findViewById(R.id.f);
 
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
                 surface = new Surface(surfaceTexture);
-                player.setVideoSurface(surface);
+                player.setSurface(surface);
                 System.out.println("onSurfaceTextureAvailable");
             }
 
@@ -54,53 +59,83 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.play).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                player.setPlayWhenReady(true);
+                f.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH);
+//                player.start();
             }
         });
 
         findViewById(R.id.pause).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                player.setPlayWhenReady(false);
+                f.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT);
+//                player.pause();
             }
         });
 
         findViewById(R.id.stop).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                player.stop();
+                f.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
+//                player.stop();
             }
         });
 
         findViewById(R.id.resume).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                player.setVideoSurface(surface);
-                player.resume();
+                f.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
+//                player.release();
             }
         });
 
-        player = new SysPlayer(getApplicationContext(), null);
+        player = new MediaPlayer();
+        player.setOnPreparedListener(this);
+        player.setOnInfoListener(this);
 //        player.setPlayWhenReady(true);
-        player.setMediaPath(path);
+        try {
+            player.setDataSource(path);
+            player.prepareAsync();
+            Log.e("FFFF", "prepareAsync");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        player.resume();
+
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        player.stop();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         player.release();
+    }
+
+    @Override
+    public void onPrepared(MediaPlayer mp) {
+        Log.e("FFFF", "onPrepared");
+        player.start();
+    }
+
+    @Override
+    public boolean onInfo(MediaPlayer mp, int what, int extra) {
+        switch (what) {
+            case MediaPlayer.MEDIA_INFO_BUFFERING_START:
+                Log.e("FFFF", "media_info_buffering_start");
+//                player.pause();
+                break;
+            case MediaPlayer.MEDIA_INFO_BUFFERING_END:
+                Log.e("FFFF", "media_info_buffering_end");
+                break;
+        }
+        return false;
     }
 }

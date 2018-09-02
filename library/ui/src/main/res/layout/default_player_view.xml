@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <com.chengfu.fuplayer.ui.AspectRatioFrameLayout
+        android:id="@+id/surface_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center">
+
+    </com.chengfu.fuplayer.ui.AspectRatioFrameLayout>
+
+    <View
+        android:id="@+id/view_shutter"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ImageView
+        android:id="@+id/img_artwork"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY" />
+
+    <FrameLayout
+        android:id="@+id/frame_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</merge>

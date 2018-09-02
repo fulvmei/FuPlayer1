@@ -40,7 +40,6 @@ public final class QiNiuPlayer extends AbsPlayer {
 
     private boolean mSeekable;
     private boolean mPlayWhenReady;
-    private boolean mPreparing;
 
     private int mCurrentState = -1;
 
@@ -83,14 +82,14 @@ public final class QiNiuPlayer extends AbsPlayer {
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
                 mCurrentState != STATE_IDLE &&
-                !mPreparing);
+                mCurrentState != STATE_PREPARING);
     }
 
     private void openMedia() {
         if (mMediaSource == null || TextUtils.isEmpty(mMediaSource.getPath())) {
             FuLog.w(TAG, "this mediaSource is null or path is empty", new NullPointerException("mediaSource is null"));
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
             return;
         }
 
@@ -98,20 +97,19 @@ public final class QiNiuPlayer extends AbsPlayer {
             mMediaPlayer = createPlayer();
             mMediaPlayer.setDataSource(mMediaSource.getPath(), mMediaSource.getHeaders());
             mMediaPlayer.prepareAsync();
-            mPreparing = true;
 
-            setPlayerState(mPlayWhenReady, STATE_BUFFERING);
+            setPlayerState(mPlayWhenReady, STATE_PREPARING);
             FuLog.i(TAG, "Set media source for the player: source=" + mMediaSource.toString());
         } catch (IOException e) {
             e.printStackTrace();
             FuLog.w(TAG, "Unable to open content: " + mMediaSource.getPath(), e);
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
             FuLog.w(TAG, "Unable to open content: " + mMediaSource.getPath(), e);
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
             return;
         }
     }
@@ -122,7 +120,7 @@ public final class QiNiuPlayer extends AbsPlayer {
         }
         mPlayWhenReady = playWhenReady;
         mCurrentState = state;
-        submitStateChanged(state);
+        submitStateChanged(playWhenReady, state);
     }
 
     @Override
@@ -268,6 +266,7 @@ public final class QiNiuPlayer extends AbsPlayer {
     @Override
     public void release() {
         if (mMediaPlayer != null) {
+            mMediaPlayer.stop();
             mMediaPlayer.release();
             mMediaPlayer = null;
             mMediaSource = null;
@@ -293,7 +292,6 @@ public final class QiNiuPlayer extends AbsPlayer {
         public void onPrepared(int i) {
             FuLog.d(TAG, "onPrepared...");
 
-            mPreparing = false;
             long seekToPosition = mSeekWhenPrepared;  // mSeekWhenPrepared may be changed after seekTo() call
             if (seekToPosition != 0) {
                 seekTo(seekToPosition);
@@ -325,13 +323,17 @@ public final class QiNiuPlayer extends AbsPlayer {
             new PLOnInfoListener() {
                 public void onInfo(int what, int extra) {
                     switch (what) {
+                        case PLOnInfoListener.MEDIA_INFO_VIDEO_RENDERING_START:
+                            FuLog.i(TAG, "onInfo : video_rendering_start");
+                            submitRenderedFirstFrame();
+                            break;
                         case PLOnInfoListener.MEDIA_INFO_BUFFERING_START:
                             FuLog.i(TAG, "onInfo : buffering_start");
-                            submitLoadingChanged(true);
+                            setPlayerState(mPlayWhenReady, STATE_BUFFERING);
                             break;
                         case PLOnInfoListener.MEDIA_INFO_BUFFERING_END:
                             FuLog.i(TAG, "onInfo : buffering_end");
-                            submitLoadingChanged(false);
+                            setPlayerState(mPlayWhenReady, STATE_READY);
                             break;
                         case PLOnInfoListener.MEDIA_INFO_IS_SEEKING:
                             mSeekable = false;
@@ -353,8 +355,8 @@ public final class QiNiuPlayer extends AbsPlayer {
             new PLOnErrorListener() {
                 public boolean onError(int framework_err) {
                     FuLog.d(TAG, "Error : code=" + getErrorCode(framework_err));
-                    setPlayerState(mPlayWhenReady, STATE_IDLE);
                     submitError(FuPlayerError.create(getErrorCode(framework_err)));
+                    setPlayerState(mPlayWhenReady, STATE_IDLE);
                     return true;
                 }
             };

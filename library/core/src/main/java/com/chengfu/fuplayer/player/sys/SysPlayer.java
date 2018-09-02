@@ -3,8 +3,6 @@ package com.chengfu.fuplayer.player.sys;
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.net.Uri;
-import android.text.TextUtils;
 import android.view.Surface;
 
 import com.chengfu.fuplayer.FuLog;
@@ -13,7 +11,6 @@ import com.chengfu.fuplayer.MediaSource;
 import com.chengfu.fuplayer.player.AbsPlayer;
 
 import java.io.IOException;
-import java.util.Map;
 
 public final class SysPlayer extends AbsPlayer {
 
@@ -31,7 +28,6 @@ public final class SysPlayer extends AbsPlayer {
 
     private boolean mSeekable;
     private boolean mPlayWhenReady;
-    private boolean mPreparing;
 
     private int mCurrentState = -1;
 
@@ -73,15 +69,16 @@ public final class SysPlayer extends AbsPlayer {
 
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
-                mCurrentState != STATE_IDLE &&
-                !mPreparing);
+                mCurrentState == STATE_READY
+                && mCurrentState == STATE_BUFFERING
+                && mCurrentState == STATE_ENDED);
     }
 
     private void openMedia() {
         if (mMediaSource == null || (mMediaSource.getPath() == null && mMediaSource.getUri() == null)) {
             FuLog.w(TAG, "this mediaSource is null or path and uri both are empty", new NullPointerException("mediaSource is null"));
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+            setPlayerState(mPlayWhenReady, STATE_ERROR);
             return;
         }
 
@@ -97,20 +94,19 @@ public final class SysPlayer extends AbsPlayer {
                 }
             }
             mMediaPlayer.prepareAsync();
-            mPreparing = true;
 
-            setPlayerState(mPlayWhenReady, STATE_BUFFERING);
+            setPlayerState(mPlayWhenReady, STATE_PREPARING);
             FuLog.i(TAG, "Set media source for the player: source=" + mMediaSource.toString());
         } catch (IOException e) {
             e.printStackTrace();
             FuLog.e(TAG, "Unable to open content: " + mMediaSource.toString(), e);
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+            setPlayerState(mPlayWhenReady, STATE_ERROR);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
             FuLog.e(TAG, "Unable to open content: " + mMediaSource.toString(), e);
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+            setPlayerState(mPlayWhenReady, STATE_ERROR);
             return;
         }
     }
@@ -121,7 +117,7 @@ public final class SysPlayer extends AbsPlayer {
         }
         mPlayWhenReady = playWhenReady;
         mCurrentState = state;
-        submitStateChanged(state);
+        submitStateChanged(playWhenReady, state);
     }
 
     @Override
@@ -307,7 +303,6 @@ public final class SysPlayer extends AbsPlayer {
     final MediaPlayer.OnPreparedListener mPreparedListener = new MediaPlayer.OnPreparedListener() {
         public void onPrepared(MediaPlayer mp) {
             FuLog.d(TAG, "onPrepared...");
-            mPreparing = false;
             long seekToPosition = mSeekWhenPrepared;  // mSeekWhenPrepared may be changed after seekTo() call
             if (seekToPosition != 0) {
                 seekTo(seekToPosition);
@@ -323,6 +318,7 @@ public final class SysPlayer extends AbsPlayer {
     final MediaPlayer.OnVideoSizeChangedListener mVideoSizeChangedListener =
             new MediaPlayer.OnVideoSizeChangedListener() {
                 public void onVideoSizeChanged(MediaPlayer mp, int width, int height) {
+                    FuLog.i(TAG, "onVideoSizeChanged : width=" + width + ",height=" + height);
                     submitVideoSizeChanged(width, height, 0, 0);
                 }
             };
@@ -339,6 +335,10 @@ public final class SysPlayer extends AbsPlayer {
             new MediaPlayer.OnInfoListener() {
                 public boolean onInfo(MediaPlayer mp, int what, int extra) {
                     switch (what) {
+                        case MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START:
+                            FuLog.i(TAG, "onInfo : video_rendering_start");
+                            submitRenderedFirstFrame();
+                            break;
                         case MediaPlayer.MEDIA_INFO_BUFFERING_START:
                             FuLog.i(TAG, "onInfo : buffering_start");
                             setPlayerState(mPlayWhenReady, STATE_BUFFERING);
@@ -368,8 +368,8 @@ public final class SysPlayer extends AbsPlayer {
             new MediaPlayer.OnErrorListener() {
                 public boolean onError(MediaPlayer mp, int framework_err, int impl_err) {
                     FuLog.d(TAG, "Error : code" + getErrorCode(framework_err));
-                    setPlayerState(mPlayWhenReady, STATE_IDLE);
                     submitError(FuPlayerError.create(getErrorCode(framework_err)));
+                    setPlayerState(mPlayWhenReady, STATE_ERROR);
                     return true;
                 }
             };
