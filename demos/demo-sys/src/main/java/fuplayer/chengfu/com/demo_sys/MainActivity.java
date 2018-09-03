@@ -21,15 +21,12 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnPre
     TextureView textureView;
     Surface surface;
 
-    AspectRatioFrameLayout f;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         textureView = findViewById(R.id.textureView);
-        f = findViewById(R.id.f);
 
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
@@ -59,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnPre
         findViewById(R.id.play).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                f.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH);
+//                f.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH);
 //                player.start();
             }
         });
@@ -67,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnPre
         findViewById(R.id.pause).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                f.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT);
+//                f.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT);
 //                player.pause();
             }
         });
@@ -75,7 +72,7 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnPre
         findViewById(R.id.stop).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                f.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
+//                f.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
 //                player.stop();
             }
         });
@@ -83,7 +80,7 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnPre
         findViewById(R.id.resume).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                f.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
+//                f.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
 //                player.release();
             }
         });

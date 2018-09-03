@@ -6,8 +6,8 @@ import android.media.MediaPlayer;
 import android.view.Surface;
 
 import com.chengfu.fuplayer.FuLog;
-import com.chengfu.fuplayer.FuPlayerError;
 import com.chengfu.fuplayer.MediaSource;
+import com.chengfu.fuplayer.PlayerError;
 import com.chengfu.fuplayer.player.AbsPlayer;
 
 import java.io.IOException;
@@ -19,6 +19,7 @@ public final class SysPlayer extends AbsPlayer {
     private final Context mContext;
     private MediaPlayer mMediaPlayer;
 
+
     private Surface mSurface;
     private int mAudioSession;
     private boolean mLooping;
@@ -26,12 +27,17 @@ public final class SysPlayer extends AbsPlayer {
 
     private MediaSource mMediaSource;
 
+    private PlayerError mPlayerError;
+    private int mCurrentBufferPercentage;
+    private int mVideoWidth;
+    private int mVideoHeight;
+    private boolean mRenderedFirstFrame;
+
     private boolean mSeekable;
     private boolean mPlayWhenReady;
 
     private int mCurrentState = -1;
 
-    private int mCurrentBufferPercentage;
     private long mSeekWhenPrepared;  // recording the seek position while preparing
 
     public SysPlayer(Context context) {
@@ -40,6 +46,11 @@ public final class SysPlayer extends AbsPlayer {
 
     public SysPlayer(Context context, SysPlayerOption option) {
         mContext = context;
+        mVideoWidth = 0;
+        mVideoHeight = 0;
+        mPlayerError = null;
+        mRenderedFirstFrame = false;
+        mCurrentBufferPercentage = 0;
         setPlayerState(mPlayWhenReady, STATE_IDLE);
     }
 
@@ -77,8 +88,9 @@ public final class SysPlayer extends AbsPlayer {
     private void openMedia() {
         if (mMediaSource == null || (mMediaSource.getPath() == null && mMediaSource.getUri() == null)) {
             FuLog.w(TAG, "this mediaSource is null or path and uri both are empty", new NullPointerException("mediaSource is null"));
-            submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_ERROR);
+            mPlayerError = PlayerError.create(PlayerError.MEDIA_ERROR_IO);
+            submitError(mPlayerError);
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
             return;
         }
 
@@ -94,19 +106,20 @@ public final class SysPlayer extends AbsPlayer {
                 }
             }
             mMediaPlayer.prepareAsync();
-
             setPlayerState(mPlayWhenReady, STATE_PREPARING);
             FuLog.i(TAG, "Set media source for the player: source=" + mMediaSource.toString());
         } catch (IOException e) {
             e.printStackTrace();
             FuLog.e(TAG, "Unable to open content: " + mMediaSource.toString(), e);
-            submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_ERROR);
+            mPlayerError = PlayerError.create(PlayerError.MEDIA_ERROR_IO);
+            submitError(mPlayerError);
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
             FuLog.e(TAG, "Unable to open content: " + mMediaSource.toString(), e);
-            submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_ERROR);
+            mPlayerError = PlayerError.create(PlayerError.MEDIA_ERROR_IO);
+            submitError(mPlayerError);
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
             return;
         }
     }
@@ -115,9 +128,19 @@ public final class SysPlayer extends AbsPlayer {
         if (mPlayWhenReady == playWhenReady && mCurrentState == state) {
             return;
         }
+        if (mCurrentState == STATE_IDLE) {
+            mVideoWidth = 0;
+            mVideoHeight = 0;
+            mRenderedFirstFrame = false;
+        }
         mPlayWhenReady = playWhenReady;
         mCurrentState = state;
         submitStateChanged(playWhenReady, state);
+    }
+
+    @Override
+    public PlayerError getPlayerError() {
+        return mPlayerError;
     }
 
     @Override
@@ -139,6 +162,10 @@ public final class SysPlayer extends AbsPlayer {
     public void setMediaSource(MediaSource mediaSource) {
         stop();
         mMediaSource = mediaSource;
+        mVideoWidth = 0;
+        mVideoHeight = 0;
+        mPlayerError = null;
+        mRenderedFirstFrame = false;
         mSeekable = false;
         mSeekWhenPrepared = 0;
         mCurrentBufferPercentage = 0;
@@ -203,6 +230,21 @@ public final class SysPlayer extends AbsPlayer {
     }
 
     @Override
+    public boolean hasRenderedFirstFrame() {
+        return mRenderedFirstFrame;
+    }
+
+    @Override
+    public int getVideoWidth() {
+        return mVideoWidth;
+    }
+
+    @Override
+    public int getVideoHeight() {
+        return mVideoHeight;
+    }
+
+    @Override
     public void setVideoSurface(Surface surface) {
         if (mSurface == surface) {
             return;
@@ -261,6 +303,7 @@ public final class SysPlayer extends AbsPlayer {
             mMediaPlayer.stop();
             mMediaPlayer.release();
             mMediaPlayer = null;
+            mPlayerError = null;
             setPlayerState(mPlayWhenReady, STATE_IDLE);
         }
     }
@@ -274,6 +317,7 @@ public final class SysPlayer extends AbsPlayer {
             mMediaSource = null;
             mPlayWhenReady = false;
             mSurface = null;
+            mPlayerError = null;
             setPlayerState(mPlayWhenReady, STATE_IDLE);
         }
     }
@@ -282,21 +326,21 @@ public final class SysPlayer extends AbsPlayer {
     private int getErrorCode(int code) {
         switch (code) {
             case MediaPlayer.MEDIA_ERROR_UNKNOWN:
-                return FuPlayerError.MEDIA_ERROR_UNKNOWN;
+                return PlayerError.MEDIA_ERROR_UNKNOWN;
             case MediaPlayer.MEDIA_ERROR_IO:
-                return FuPlayerError.MEDIA_ERROR_IO;
+                return PlayerError.MEDIA_ERROR_IO;
             case MediaPlayer.MEDIA_ERROR_SERVER_DIED:
-                return FuPlayerError.MEDIA_ERROR_SERVER_DIED;
+                return PlayerError.MEDIA_ERROR_SERVER_DIED;
             case MediaPlayer.MEDIA_ERROR_TIMED_OUT:
-                return FuPlayerError.MEDIA_ERROR_TIMED_OUT;
+                return PlayerError.MEDIA_ERROR_TIMED_OUT;
             case MediaPlayer.MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK:
-                return FuPlayerError.MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK;
+                return PlayerError.MEDIA_ERROR_NOT_VALID_FOR_PROGRESSIVE_PLAYBACK;
             case MediaPlayer.MEDIA_ERROR_MALFORMED:
-                return FuPlayerError.MEDIA_ERROR_MALFORMED;
+                return PlayerError.MEDIA_ERROR_MALFORMED;
             case MediaPlayer.MEDIA_ERROR_UNSUPPORTED:
-                return FuPlayerError.MEDIA_ERROR_UNSUPPORTED;
+                return PlayerError.MEDIA_ERROR_UNSUPPORTED;
             default:
-                return FuPlayerError.MEDIA_ERROR_UNKNOWN;
+                return PlayerError.MEDIA_ERROR_UNKNOWN;
         }
     }
 
@@ -319,6 +363,8 @@ public final class SysPlayer extends AbsPlayer {
             new MediaPlayer.OnVideoSizeChangedListener() {
                 public void onVideoSizeChanged(MediaPlayer mp, int width, int height) {
                     FuLog.i(TAG, "onVideoSizeChanged : width=" + width + ",height=" + height);
+                    mVideoWidth = width;
+                    mVideoHeight = height;
                     submitVideoSizeChanged(width, height, 0, 0);
                 }
             };
@@ -337,6 +383,7 @@ public final class SysPlayer extends AbsPlayer {
                     switch (what) {
                         case MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START:
                             FuLog.i(TAG, "onInfo : video_rendering_start");
+                            mRenderedFirstFrame = true;
                             submitRenderedFirstFrame();
                             break;
                         case MediaPlayer.MEDIA_INFO_BUFFERING_START:
@@ -368,8 +415,9 @@ public final class SysPlayer extends AbsPlayer {
             new MediaPlayer.OnErrorListener() {
                 public boolean onError(MediaPlayer mp, int framework_err, int impl_err) {
                     FuLog.d(TAG, "Error : code" + getErrorCode(framework_err));
-                    submitError(FuPlayerError.create(getErrorCode(framework_err)));
-                    setPlayerState(mPlayWhenReady, STATE_ERROR);
+                    mPlayerError = PlayerError.create(getErrorCode(framework_err));
+                    submitError(mPlayerError);
+                    setPlayerState(mPlayWhenReady, STATE_IDLE);
                     return true;
                 }
             };

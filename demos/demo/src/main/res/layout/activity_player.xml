@@ -18,15 +18,12 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#000000"
-            app:resize_mode="zoom"
-            app:show_buffering="true"
-            app:shutter_background_color="#000000" />
+            app:resize_mode="fit" />
 
         <com.chengfu.fuplayer.ui.DefaultControlView
             android:id="@+id/controlView1"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone" />
+            android:layout_height="match_parent" />
 
     </FrameLayout>
 
@@ -91,13 +88,13 @@
         <com.chengfu.fuplayer.ui.PlayerView
             android:id="@+id/playerView2"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:background="#000000" />
 
         <com.chengfu.fuplayer.ui.DefaultControlView
             android:id="@+id/controlView2"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone" />
+            android:layout_height="match_parent" />
 
     </FrameLayout>
 

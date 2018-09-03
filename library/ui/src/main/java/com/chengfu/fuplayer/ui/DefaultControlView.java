@@ -1,9 +1,11 @@
 package com.chengfu.fuplayer.ui;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.support.v4.view.GestureDetectorCompat;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
@@ -162,30 +164,22 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
 
     public DefaultControlView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        init(context, attrs, defStyleAttr);
-    }
 
-    private void init(Context context, AttributeSet attrs, int defStyleAttr) {
         mContext = context;
-        inflateControllerView();
 
-        mFormatBuilder = new StringBuilder();
-        mFormatter = new Formatter(mFormatBuilder, Locale.getDefault());
-//        mGestureDetector = new GestureDetectorCompat(mContext, mGestureListener);
-    }
+        if (attrs != null) {
+//            TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.PlayerControlView, 0, 0);
+//            try {
+////                surfaceType = a.getInt(R.styleable.PlayerView_surface_type, SURFACE_TYPE_SURFACE_VIEW);
+////                resizeMode = a.getInt(R.styleable.PlayerView_resize_mode, RESIZE_MODE_FIT);
+//
+//            } finally {
+//                a.recycle();
+//            }
+        }
 
-    protected void inflateControllerView() {
-        View.inflate(mContext, R.layout.view_default_controller, this);
-    }
+        LayoutInflater.from(context).inflate(R.layout.default_controller_view, this);
 
-    @Override
-    protected void onFinishInflate() {
-        super.onFinishInflate();
-
-        initView();
-    }
-
-    protected void initView() {
         //Top
         llTopContainer = findViewById(R.id.default_controller_llTopContainer);
         imgBtnBack = findViewById(R.id.default_controller_imgBtnBack);
@@ -204,12 +198,16 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
         seekBar = findViewById(R.id.default_controller_seekBar);
         tvEndTime = findViewById(R.id.default_controller_tvEndTime);
 
+
+
         imgBtnBack.setOnClickListener(this);
         mImgBtnPlayPause.setOnClickListener(this);
 
         seekBar.setMax(1000);
         seekBar.setOnSeekBarChangeListener(this);
 
+        mFormatBuilder = new StringBuilder();
+        mFormatter = new Formatter(mFormatBuilder, Locale.getDefault());
     }
 
     private void updateAll() {
@@ -399,9 +397,9 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
             }
         }
         if (mImgBtnPlayPause == v) {
-            if (isPlaying()){
+            if (isPlaying()) {
 //                mPlayer.pause();
-            }else {
+            } else {
 //                mPlayer.start();
             }
 

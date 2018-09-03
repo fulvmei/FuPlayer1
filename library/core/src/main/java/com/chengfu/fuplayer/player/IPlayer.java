@@ -1,17 +1,14 @@
 package com.chengfu.fuplayer.player;
 
-import android.net.Uri;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.TextureView;
 
-import com.chengfu.fuplayer.FuPlayerError;
 import com.chengfu.fuplayer.MediaSource;
+import com.chengfu.fuplayer.PlayerError;
 import com.chengfu.fuplayer.text.TextOutput;
 import com.chengfu.fuplayer.video.VideoListener;
-
-import java.util.Map;
 
 public interface IPlayer {
 
@@ -30,6 +27,12 @@ public interface IPlayer {
          * @param listener The listener to unregister.
          */
         void removeVideoListener(VideoListener listener);
+
+        boolean hasRenderedFirstFrame();
+
+        int getVideoWidth();
+
+        int getVideoHeight();
 
         /**
          * Sets the {@link Surface} onto which video will be rendered. The caller is responsible for
@@ -89,17 +92,6 @@ public interface IPlayer {
         void removeTextOutput(TextOutput listener);
     }
 
-    int STATE_IDLE = 1;
-    int STATE_PREPARING = 2;
-    int STATE_READY = 3;
-    int STATE_BUFFERING = 4;
-    int STATE_ENDED = 5;
-    int STATE_ERROR = 6;
-
-    int VIDEO_SCALING_MODE_SCALE_TO_FIT = 0;
-    int VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING = 1;
-
-
     interface EventListener {
 
         void onStateChanged(boolean playWhenReady, int playbackState);
@@ -108,8 +100,16 @@ public interface IPlayer {
 
         void onSeekComplete();
 
-        void onError(FuPlayerError error);
+        void onError(PlayerError playerError);
     }
+
+    int STATE_IDLE = 1;
+    int STATE_PREPARING = 2;
+    int STATE_READY = 3;
+    int STATE_BUFFERING = 4;
+    int STATE_ENDED = 5;
+//    int STATE_ERROR = 6;
+
 
     VideoComponent getVideoComponent();
 
@@ -118,6 +118,8 @@ public interface IPlayer {
     void addEventListener(EventListener listener);
 
     void removeEventListener(EventListener listener);
+
+    PlayerError getPlayerError();
 
     int getPlayerState();
 

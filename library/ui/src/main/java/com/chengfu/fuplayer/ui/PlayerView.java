@@ -3,8 +3,6 @@ package com.chengfu.fuplayer.ui;
 import android.content.Context;
 
 import android.content.res.TypedArray;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.support.annotation.NonNull;
@@ -15,7 +13,6 @@ import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 
 import com.chengfu.fuplayer.FuLog;
 import com.chengfu.fuplayer.FuPlayerError;
@@ -47,17 +44,10 @@ public class PlayerView extends FrameLayout implements IPlayerView {
     private View mShutterView;
     private final CopyOnWriteArraySet<BaseStateView> mStateViews = new CopyOnWriteArraySet<>();
 
-    private ImageView artworkView;
+    private IPlayer mPlayer;
+    private ComponentListener mComponentListener;
 
-    private ComponentListener componentListener;
-
-    private IPlayer player;
-
-    private boolean useArtwork;
-    private Bitmap defaultArtwork;
-
-    private int textureViewRotation;
-
+    private int mTextureViewRotation;
     private int mSurfaceType = -1;
     private int mResizeMode = -1;
 
@@ -77,11 +67,8 @@ public class PlayerView extends FrameLayout implements IPlayerView {
             return;
         }
         mContext = context;
-        componentListener = new ComponentListener();
+        mComponentListener = new ComponentListener();
 
-        boolean useArtwork = true;
-        int defaultArtworkId = 0;
-        boolean showBuffering = false;
 
         int surfaceType = SURFACE_TYPE_SURFACE_VIEW;
         int resizeMode = RESIZE_MODE_FIT;
@@ -89,13 +76,9 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         if (attrs != null) {
             TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.PlayerView, 0, 0);
             try {
-                useArtwork = a.getBoolean(R.styleable.PlayerView_use_artwork, useArtwork);
-                defaultArtworkId =
-                        a.getResourceId(R.styleable.PlayerView_default_artwork, defaultArtworkId);
                 surfaceType = a.getInt(R.styleable.PlayerView_surface_type, SURFACE_TYPE_SURFACE_VIEW);
                 resizeMode = a.getInt(R.styleable.PlayerView_resize_mode, RESIZE_MODE_FIT);
 
-                showBuffering = a.getBoolean(R.styleable.PlayerView_show_buffering, showBuffering);
             } finally {
                 a.recycle();
             }
@@ -106,19 +89,13 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         mShutterView = findViewById(R.id.view_shutter);
         mShutterView.setBackground(getBackground());
 
-        setSurfaceView(surfaceType);
+        setSurfaceViewType(surfaceType);
 
         setResizeMode(resizeMode);
 
-        // Artwork view.
-        artworkView = findViewById(R.id.img_artwork);
-        this.useArtwork = useArtwork && artworkView != null;
-        if (defaultArtworkId != 0) {
-            defaultArtwork = BitmapFactory.decodeResource(context.getResources(), defaultArtworkId);
-        }
     }
 
-    public void setSurfaceView(int surfaceType) {
+    public void setSurfaceViewType(int surfaceType) {
         if (mSurfaceType == surfaceType
                 || (surfaceType != SURFACE_TYPE_SURFACE_VIEW
                 && surfaceType != SURFACE_TYPE_TEXTURE_VIEW)) {
@@ -135,11 +112,11 @@ public class PlayerView extends FrameLayout implements IPlayerView {
 
         mSurfaceContainer.addView(mSurfaceView);
 
-        if (player != null && player.getVideoComponent() != null) {
+        if (mPlayer != null && mPlayer.getVideoComponent() != null) {
             if (mSurfaceView instanceof TextureView) {
-                player.getVideoComponent().setVideoTextureView((TextureView) mSurfaceView);
+                mPlayer.getVideoComponent().setVideoTextureView((TextureView) mSurfaceView);
             } else if (mSurfaceView instanceof SurfaceView) {
-                player.getVideoComponent().setVideoSurfaceView((SurfaceView) mSurfaceView);
+                mPlayer.getVideoComponent().setVideoSurfaceView((SurfaceView) mSurfaceView);
             }
         }
     }
@@ -167,29 +144,31 @@ public class PlayerView extends FrameLayout implements IPlayerView {
 
     @Override
     public void setPlayer(IPlayer player) {
-        if (this.player == player) {
+        if (mPlayer == player) {
             return;
         }
-        if (this.player != null) {
-            this.player.removeEventListener(componentListener);
-            IPlayer.VideoComponent oldVideoComponent = this.player.getVideoComponent();
+        if (mPlayer != null) {
+            mPlayer.removeEventListener(mComponentListener);
+            IPlayer.VideoComponent oldVideoComponent = mPlayer.getVideoComponent();
             if (oldVideoComponent != null) {
-                oldVideoComponent.removeVideoListener(componentListener);
+                oldVideoComponent.removeVideoListener(mComponentListener);
                 if (mSurfaceView instanceof TextureView) {
                     oldVideoComponent.setVideoTextureView(null);
                 } else if (mSurfaceView instanceof SurfaceView) {
                     oldVideoComponent.setVideoSurfaceView(null);
                 }
             }
-            IPlayer.TextComponent oldTextComponent = this.player.getTextComponent();
+            IPlayer.TextComponent oldTextComponent = mPlayer.getTextComponent();
             if (oldTextComponent != null) {
-                oldTextComponent.removeTextOutput(componentListener);
+                oldTextComponent.removeTextOutput(mComponentListener);
             }
         }
-        this.player = player;
-//        updateBuffering();
-//        updateErrorMessage();
+        mPlayer = player;
+
         if (player != null) {
+            for (BaseStateView stateView : mStateViews) {
+                stateView.onStateChanged(player.getPlayWhenReady(), player.getPlayerState());
+            }
             IPlayer.VideoComponent newVideoComponent = player.getVideoComponent();
             if (newVideoComponent != null) {
                 if (mSurfaceView instanceof TextureView) {
@@ -197,55 +176,41 @@ public class PlayerView extends FrameLayout implements IPlayerView {
                 } else if (mSurfaceView instanceof SurfaceView) {
                     newVideoComponent.setVideoSurfaceView((SurfaceView) mSurfaceView);
                 }
-                newVideoComponent.addVideoListener(componentListener);
+                newVideoComponent.addVideoListener(mComponentListener);
             }
             IPlayer.TextComponent newTextComponent = player.getTextComponent();
             if (newTextComponent != null) {
-                newTextComponent.addTextOutput(componentListener);
+                newTextComponent.addTextOutput(mComponentListener);
             }
-            player.addEventListener(componentListener);
+            player.addEventListener(mComponentListener);
         }
     }
 
     @Override
     public IPlayer getPlayer() {
-        return player;
+        return mPlayer;
     }
 
     public void addStateView(BaseStateView stateView) {
-        if (stateView == null) {
+        if (stateView == null || mStateViews.contains(stateView)) {
             return;
         }
         addView(stateView);
-        updateStateViews(stateView);
         mStateViews.add(stateView);
+
+        if (mPlayer != null) {
+            stateView.onStateChanged(mPlayer.getPlayWhenReady(), mPlayer.getPlayerState());
+        }
     }
 
     public void removeStateView(BaseStateView stateView) {
-        if (stateView == null) {
+        if (stateView == null || !mStateViews.contains(stateView)) {
             return;
         }
         removeView(stateView);
         mStateViews.remove(stateView);
+        stateView.removed();
     }
-
-    private void updateStateViews(BaseStateView stateView) {
-        if (player == null || stateView == null) {
-            return;
-        }
-        stateView.onStateChanged(player.getPlayWhenReady(), player.getPlayerState());
-    }
-
-//    private void updateBuffering() {
-//        if (bufferingView != null) {
-//            boolean showBufferingSpinner =
-//                    showBuffering
-//                            && player != null
-//                            && player.getPlayerState() == IPlayer.STATE_BUFFERING
-//                            && player.getPlayWhenReady();
-//            bufferingView.setVisibility(showBufferingSpinner ? View.VISIBLE : View.GONE);
-//        }
-//    }
 
     /**
      * Applies a texture rotation to a {@link TextureView}.
@@ -279,7 +244,6 @@ public class PlayerView extends FrameLayout implements IPlayerView {
 
         @Override
         public void onStateChanged(boolean playWhenReady, int playbackState) {
-//            updateBuffering();
             for (BaseStateView stateView : mStateViews) {
                 stateView.onStateChanged(playWhenReady, playbackState);
             }
@@ -287,17 +251,13 @@ public class PlayerView extends FrameLayout implements IPlayerView {
 
         @Override
         public void onBufferingUpdate(int percent) {
-            for (BaseStateView stateView : mStateViews) {
-                stateView.onBufferingUpdate(percent);
-            }
+
         }
 
 
         @Override
         public void onSeekComplete() {
-            for (BaseStateView stateView : mStateViews) {
-                stateView.onSeekComplete();
-            }
+
         }
 
         @Override
@@ -323,16 +283,16 @@ public class PlayerView extends FrameLayout implements IPlayerView {
                     // In this case, the output video's width and height will be swapped.
                     videoAspectRatio = 1 / videoAspectRatio;
                 }
-                if (textureViewRotation != 0) {
+                if (mTextureViewRotation != 0) {
                     mSurfaceView.removeOnLayoutChangeListener(this);
                 }
-                textureViewRotation = unappliedRotationDegrees;
-                if (textureViewRotation != 0) {
+                mTextureViewRotation = unappliedRotationDegrees;
+                if (mTextureViewRotation != 0) {
                     // The texture view's dimensions might be changed after layout step.
                     // So add an OnLayoutChangeListener to apply rotation after layout step.
                     mSurfaceView.addOnLayoutChangeListener(this);
                 }
-                applyTextureViewRotation((TextureView) mSurfaceView, textureViewRotation);
+                applyTextureViewRotation((TextureView) mSurfaceView, mTextureViewRotation);
             }
             FuLog.d(TAG, "videoAspectRatio : videoAspectRatio=" + videoAspectRatio);
             mSurfaceContainer.setAspectRatio(videoAspectRatio);
@@ -352,7 +312,7 @@ public class PlayerView extends FrameLayout implements IPlayerView {
 
         @Override
         public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-            applyTextureViewRotation((TextureView) v, textureViewRotation);
+            applyTextureViewRotation((TextureView) v, mTextureViewRotation);
         }
     }
 }

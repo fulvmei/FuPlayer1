@@ -220,14 +220,12 @@ public class PlayerActivity extends AppCompatActivity {
         sp.edit().putInt("currentPlayerView", currentPlayerView).commit();
         switch (index) {
             case 0:
-//                mPlayerView1.setPlayer(mFuPlayer);
-//                mPlayerView2.setPlayer(null);
                 mFuPlayer.setPlayerView(mPlayerView1);
+                mFuPlayer.setPlayerController(mControlView1);
                 break;
             case 1:
-//                mPlayerView2.setPlayer(mFuPlayer);
-//                mPlayerView1.setPlayer(null);
                 mFuPlayer.setPlayerView(mPlayerView2);
+                mFuPlayer.setPlayerController(mControlView2);
                 break;
         }
     }
@@ -270,12 +268,12 @@ public class PlayerActivity extends AppCompatActivity {
         sp.edit().putInt("currentSurface", currentSurface).commit();
         switch (index) {
             case 0:
-                mPlayerView1.setSurfaceView(PlayerView.SURFACE_TYPE_SURFACE_VIEW);
-                mPlayerView2.setSurfaceView(PlayerView.SURFACE_TYPE_SURFACE_VIEW);
+                mPlayerView1.setSurfaceViewType(PlayerView.SURFACE_TYPE_SURFACE_VIEW);
+                mPlayerView2.setSurfaceViewType(PlayerView.SURFACE_TYPE_SURFACE_VIEW);
                 break;
             case 1:
-                mPlayerView1.setSurfaceView(PlayerView.SURFACE_TYPE_TEXTURE_VIEW);
-                mPlayerView2.setSurfaceView(PlayerView.SURFACE_TYPE_TEXTURE_VIEW);
+                mPlayerView1.setSurfaceViewType(PlayerView.SURFACE_TYPE_TEXTURE_VIEW);
+                mPlayerView2.setSurfaceViewType(PlayerView.SURFACE_TYPE_TEXTURE_VIEW);
                 break;
         }
     }

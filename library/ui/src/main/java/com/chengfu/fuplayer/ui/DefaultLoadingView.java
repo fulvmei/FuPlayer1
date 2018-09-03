@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ProgressBar;
 
+import com.chengfu.fuplayer.FuPlayerError;
 import com.chengfu.fuplayer.player.IPlayer;
 
 public class DefaultLoadingView extends BaseStateView {
@@ -24,15 +25,26 @@ public class DefaultLoadingView extends BaseStateView {
         super(context, attrs, defStyleAttr);
 
         LayoutInflater.from(context).inflate(R.layout.default_lodaing_view, this);
+
+        setVisibility(View.GONE);
     }
 
     @Override
     public void onStateChanged(boolean playWhenReady, int playbackState) {
-        System.out.println("aaaaaaaaaaaaaaaa   playWhenReady=" + playWhenReady + "，playbackState=" + playbackState);
-        if (playbackState == IPlayer.STATE_PREPARING || (playWhenReady == true && playbackState == IPlayer.STATE_BUFFERING)) {
+        if (playWhenReady == true && (playbackState == IPlayer.STATE_PREPARING || playbackState == IPlayer.STATE_BUFFERING)) {
             setVisibility(View.VISIBLE);
         } else {
-            setVisibility(View.INVISIBLE);
+            setVisibility(View.GONE);
         }
+    }
+
+    @Override
+    void onError(FuPlayerError error) {
+
+    }
+
+    @Override
+    void removed() {
+        setVisibility(View.GONE);
     }
 }

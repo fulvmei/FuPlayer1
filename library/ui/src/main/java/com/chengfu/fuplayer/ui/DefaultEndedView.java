@@ -7,6 +7,7 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 
+import com.chengfu.fuplayer.FuPlayerError;
 import com.chengfu.fuplayer.player.IPlayer;
 
 public class DefaultEndedView extends BaseStateView {
@@ -23,6 +24,8 @@ public class DefaultEndedView extends BaseStateView {
         super(context, attrs, defStyleAttr);
 
         LayoutInflater.from(context).inflate(R.layout.default_ended_view, this);
+
+        setVisibility(View.GONE);
     }
 
     @Override
@@ -32,5 +35,15 @@ public class DefaultEndedView extends BaseStateView {
         } else {
             setVisibility(View.GONE);
         }
+    }
+
+    @Override
+    void onError(FuPlayerError error) {
+
+    }
+
+    @Override
+    void removed() {
+        setVisibility(View.GONE);
     }
 }

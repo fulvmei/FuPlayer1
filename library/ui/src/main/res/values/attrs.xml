@@ -29,4 +29,6 @@
         <attr name="show_shuffle_button" />
         <attr name="controller_layout_id" />
     </declare-styleable>
+
+    <declare-styleable name="PlayerControlView"></declare-styleable>
 </resources>

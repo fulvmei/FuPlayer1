@@ -42,17 +42,6 @@
         android:layout_alignParentBottom="true"
         android:background="@color/colorAccent">
 
-        <fuplayer.chengfu.com.demo_sys.AspectRatioFrameLayout
-            android:id="@+id/f"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/colorPrimaryDark">
-
-            <TextureView
-                android:id="@+id/textureView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-        </fuplayer.chengfu.com.demo_sys.AspectRatioFrameLayout>
     </FrameLayout>
 
 </RelativeLayout>

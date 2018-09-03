@@ -26,6 +26,8 @@ public class DefaultErrorView extends BaseStateView {
         super(context, attrs, defStyleAttr);
 
         LayoutInflater.from(context).inflate(R.layout.default_error_view, this);
+
+        setVisibility(View.GONE);
     }
 
     @Override
@@ -40,5 +42,10 @@ public class DefaultErrorView extends BaseStateView {
     @Override
     public void onError(FuPlayerError error) {
         mPlayerError = error;
+    }
+
+    @Override
+    void removed() {
+        setVisibility(View.GONE);
     }
 }

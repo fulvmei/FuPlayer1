@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
 
     <LinearLayout
         android:id="@+id/default_controller_llTopContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_gravity="top"
         android:background="@drawable/bg_default_controller_top"
         android:gravity="center_vertical"
         android:orientation="horizontal">
@@ -34,15 +34,17 @@
         android:layout_width="@dimen/default_controller_play_pause_btn_size_portrait"
         android:layout_height="@dimen/default_controller_play_pause_btn_size_portrait"
         android:layout_centerInParent="true"
+        android:layout_gravity="center"
         android:background="@null"
         android:scaleType="fitXY"
         android:src="@drawable/selector_default_controller_play" />
 
     <LinearLayout
-        android:id="@+id/default_controller_lvBrightnessRoot"
+        android:id="@+id/default_controller_llBrightnessContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
+        android:layout_gravity="center"
         android:gravity="center"
         android:orientation="vertical"
         android:visibility="gone">
@@ -63,10 +65,11 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/default_controller_lvProgressRoot"
+        android:id="@+id/default_controller_lvProgressContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
+        android:layout_gravity="center"
         android:gravity="center"
         android:orientation="vertical"
         android:visibility="gone">
@@ -87,10 +90,11 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/default_controller_lvVolumeRoot"
+        android:id="@+id/default_controller_lvVolumeContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
+        android:layout_gravity="center"
         android:gravity="center"
         android:orientation="vertical"
         android:visibility="gone">
@@ -115,6 +119,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
+        android:layout_gravity="bottom"
         android:background="@drawable/bg_default_controller_bottom"
         android:gravity="center_vertical"
         android:orientation="horizontal">
@@ -178,4 +183,4 @@
             android:src="@drawable/ic_default_controller_full_screen" />
     </LinearLayout>
 
-</RelativeLayout>
+</merge>

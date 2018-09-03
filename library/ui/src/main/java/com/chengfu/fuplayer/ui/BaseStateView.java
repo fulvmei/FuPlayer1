@@ -9,7 +9,7 @@ import android.widget.FrameLayout;
 import com.chengfu.fuplayer.FuPlayerError;
 import com.chengfu.fuplayer.player.IPlayer;
 
-public class BaseStateView extends FrameLayout implements IPlayer.EventListener{
+public abstract class BaseStateView extends FrameLayout {
 
     public BaseStateView(@NonNull Context context) {
         super(context);
@@ -23,23 +23,11 @@ public class BaseStateView extends FrameLayout implements IPlayer.EventListener{
         super(context, attrs, defStyleAttr);
     }
 
-    @Override
-    public void onStateChanged(boolean playWhenReady, int playbackState) {
+    abstract void onStateChanged(boolean playWhenReady, int playbackState);
 
-    }
+    abstract void onError(FuPlayerError error);
 
-    @Override
-    public void onBufferingUpdate(int percent) {
+    abstract void removed();
 
-    }
 
-    @Override
-    public void onSeekComplete() {
-
-    }
-
-    @Override
-    public void onError(FuPlayerError error) {
-
-    }
 }

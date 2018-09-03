@@ -264,6 +264,11 @@ public class FuPlayer implements IPlayer {
     }
 
     @Override
+    public PlayerError getPlayerError() {
+        return null;
+    }
+
+    @Override
     public int getPlayerState() {
         return 0;
     }

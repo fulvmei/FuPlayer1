@@ -3,13 +3,12 @@ package com.chengfu.fuplayer.player.exo;
 import android.content.Context;
 import android.net.Uri;
 import android.support.annotation.Nullable;
-import android.text.TextUtils;
 import android.view.Surface;
 
 import com.chengfu.fuplayer.FuLog;
-import com.chengfu.fuplayer.FuPlayerError;
+
+import com.chengfu.fuplayer.PlayerError;
 import com.chengfu.fuplayer.player.AbsPlayer;
-import com.chengfu.fuplayer.player.IPlayer;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlaybackException;
@@ -19,8 +18,6 @@ import com.google.android.exoplayer2.RenderersFactory;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.ext.rtmp.RtmpDataSourceFactory;
-import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
-import com.google.android.exoplayer2.extractor.ExtractorsFactory;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
@@ -37,8 +34,6 @@ import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 import com.google.android.exoplayer2.video.VideoListener;
 
-import java.io.IOException;
-import java.util.Map;
 
 public class ExoPlayer extends AbsPlayer {
 
@@ -55,13 +50,18 @@ public class ExoPlayer extends AbsPlayer {
 
     private com.chengfu.fuplayer.MediaSource mMediaSource;
 
+    private PlayerError mPlayerError;
+    private int mCurrentBufferPercentage;
+    private int mVideoWidth;
+    private int mVideoHeight;
+    private boolean mRenderedFirstFrame;
+
     private boolean mSeekable;
     private boolean mPlayWhenReady;
 //    private boolean mPreparing;
 
     private int mCurrentState = -1;
 
-    private int mCurrentBufferPercentage;
     private long mSeekWhenPrepared;  // recording the seek position while preparing
 
     public ExoPlayer(Context context) {
@@ -70,6 +70,10 @@ public class ExoPlayer extends AbsPlayer {
 
     public ExoPlayer(Context context, ExoPlayerOption option) {
         mContext = context;
+        mVideoWidth = 0;
+        mVideoHeight = 0;
+        mPlayerError = null;
+        mRenderedFirstFrame = false;
         mBandwidthMeter = new DefaultBandwidthMeter();
         setPlayerState(mPlayWhenReady, STATE_IDLE);
     }
@@ -137,8 +141,9 @@ public class ExoPlayer extends AbsPlayer {
     private void openMedia() {
         if (mMediaSource == null || (mMediaSource.getPath() == null && mMediaSource.getUri() == null)) {
             FuLog.w(TAG, "this mediaSource is null or path and uri both are empty", new NullPointerException("mediaSource is null"));
-            submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_ERROR);
+            mPlayerError = PlayerError.create(PlayerError.MEDIA_ERROR_IO);
+            submitError(mPlayerError);
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
             return;
         }
         if (mMediaPlayer == null) {
@@ -155,11 +160,34 @@ public class ExoPlayer extends AbsPlayer {
         if (mPlayWhenReady == playWhenReady && mCurrentState == playbackState) {
             return;
         }
-        FuLog.i(TAG, "onPlayerStateChanged : playWhenReady = " + playWhenReady
-                + ", playbackState = " + playbackState);
+        if (mCurrentState == STATE_IDLE) {
+            mVideoWidth = 0;
+            mVideoHeight = 0;
+            mRenderedFirstFrame = false;
+        }
         mPlayWhenReady = playWhenReady;
         mCurrentState = playbackState;
         submitStateChanged(playWhenReady, playbackState);
+    }
+
+    @Override
+    public PlayerError getPlayerError() {
+        return mPlayerError;
+    }
+
+    @Override
+    public boolean hasRenderedFirstFrame() {
+        return mRenderedFirstFrame;
+    }
+
+    @Override
+    public int getVideoWidth() {
+        return mVideoWidth;
+    }
+
+    @Override
+    public int getVideoHeight() {
+        return mVideoHeight;
     }
 
     @Override
@@ -190,6 +218,10 @@ public class ExoPlayer extends AbsPlayer {
     public void setMediaSource(com.chengfu.fuplayer.MediaSource mediaSource) {
         stop();
         mMediaSource = mediaSource;
+        mVideoWidth = 0;
+        mVideoHeight = 0;
+        mPlayerError = null;
+        mRenderedFirstFrame = false;
         mSeekable = false;
         mSeekWhenPrepared = 0;
         mCurrentBufferPercentage = 0;
@@ -299,6 +331,7 @@ public class ExoPlayer extends AbsPlayer {
             mMediaPlayer.stop();
 //            mMediaPlayer.release();
 //            mMediaPlayer = null;
+            mPlayerError = null;
             setPlayerState(mPlayWhenReady, STATE_IDLE);
         }
     }
@@ -312,6 +345,7 @@ public class ExoPlayer extends AbsPlayer {
             mMediaSource = null;
             mPlayWhenReady = false;
             mSurface = null;
+            mPlayerError = null;
             setPlayerState(mPlayWhenReady, STATE_IDLE);
         }
     }
@@ -320,13 +354,15 @@ public class ExoPlayer extends AbsPlayer {
         @Override
         public void onVideoSizeChanged(int width, int height,
                                        int unappliedRotationDegrees, float pixelWidthHeightRatio) {
-
+            mVideoWidth = width;
+            mVideoHeight = height;
             submitVideoSizeChanged(width, height, unappliedRotationDegrees, pixelWidthHeightRatio);
         }
 
         @Override
         public void onRenderedFirstFrame() {
             FuLog.i(TAG, "onInfo : video_rendering_start");
+            mRenderedFirstFrame = true;
             submitRenderedFirstFrame();
         }
     };
@@ -355,11 +391,7 @@ public class ExoPlayer extends AbsPlayer {
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
             if (playbackState == Player.STATE_IDLE) {
-                if (mMediaPlayer.getPlaybackError() != null) {
-                    setPlayerState(playWhenReady, STATE_ERROR);
-                } else {
-                    setPlayerState(playWhenReady, STATE_IDLE);
-                }
+                setPlayerState(playWhenReady, STATE_IDLE);
             } else if (playbackState == Player.STATE_BUFFERING) {
                 setPlayerState(playWhenReady, STATE_BUFFERING);
             } else if (playbackState == Player.STATE_READY) {
@@ -382,19 +414,23 @@ public class ExoPlayer extends AbsPlayer {
         @Override
         public void onPlayerError(ExoPlaybackException error) {
             if (error == null) {
-                submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_UNKNOWN));
+                mPlayerError = PlayerError.create(PlayerError.MEDIA_ERROR_UNKNOWN);
+                submitError(mPlayerError);
                 return;
             }
             int type = error.type;
             switch (type) {
                 case ExoPlaybackException.TYPE_SOURCE:
-                    submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+                    mPlayerError = PlayerError.create(PlayerError.MEDIA_ERROR_IO);
+                    submitError(mPlayerError);
                     break;
                 case ExoPlaybackException.TYPE_RENDERER:
-                    submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
+                    mPlayerError = PlayerError.create(PlayerError.MEDIA_ERROR_IO);
+                    submitError(mPlayerError);
                     break;
                 case ExoPlaybackException.TYPE_UNEXPECTED:
-                    submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_UNKNOWN));
+                    mPlayerError = PlayerError.create(PlayerError.MEDIA_ERROR_UNKNOWN);
+                    submitError(mPlayerError);
                     break;
             }
         }

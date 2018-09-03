@@ -1,17 +1,14 @@
 package com.chengfu.fuplayer.player.qiniu;
 
-import android.content.ContentResolver;
 import android.content.Context;
-import android.database.Cursor;
-import android.net.Uri;
-import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.view.Surface;
 
 import com.chengfu.fuplayer.FuLog;
-import com.chengfu.fuplayer.FuPlayerError;
 import com.chengfu.fuplayer.MediaSource;
+import com.chengfu.fuplayer.PlayerError;
 import com.chengfu.fuplayer.player.AbsPlayer;
+import com.pili.pldroid.player.AVOptions;
 import com.pili.pldroid.player.PLMediaPlayer;
 import com.pili.pldroid.player.PLOnAudioFrameListener;
 import com.pili.pldroid.player.PLOnBufferingUpdateListener;
@@ -25,7 +22,6 @@ import com.pili.pldroid.player.PLOnVideoFrameListener;
 import com.pili.pldroid.player.PLOnVideoSizeChangedListener;
 
 import java.io.IOException;
-import java.util.Map;
 
 public final class QiNiuPlayer extends AbsPlayer {
 
@@ -40,12 +36,17 @@ public final class QiNiuPlayer extends AbsPlayer {
 
     private MediaSource mMediaSource;
 
+    private PlayerError mPlayerError;
+    private int mCurrentBufferPercentage;
+    private int mVideoWidth;
+    private int mVideoHeight;
+    private boolean mRenderedFirstFrame;
+
     private boolean mSeekable;
     private boolean mPlayWhenReady;
 
     private int mCurrentState = -1;
 
-    private int mCurrentBufferPercentage;
     private long mSeekWhenPrepared;  // recording the seek position while preparing
 
     public QiNiuPlayer(Context context) {
@@ -54,9 +55,18 @@ public final class QiNiuPlayer extends AbsPlayer {
 
     public QiNiuPlayer(Context context, QiNiuPlayerOption option) {
         mContext = context;
+        mVideoWidth = 0;
+        mVideoHeight = 0;
+        mPlayerError = null;
+        mRenderedFirstFrame = false;
+        mCurrentBufferPercentage = 0;
+        setPlayerState(mPlayWhenReady, STATE_IDLE);
     }
 
     private PLMediaPlayer createPlayer() {
+        AVOptions options = new AVOptions();
+        options.setInteger(AVOptions.KEY_MEDIACODEC, AVOptions.MEDIA_CODEC_SW_DECODE);
+
         PLMediaPlayer mediaPlayer = new PLMediaPlayer(mContext);
 
 //        mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
@@ -93,8 +103,8 @@ public final class QiNiuPlayer extends AbsPlayer {
     private void openMedia() {
         if (mMediaSource == null || TextUtils.isEmpty(mMediaSource.getPath())) {
             FuLog.w(TAG, "this mediaSource is null or path is empty", new NullPointerException("mediaSource is null"));
-            submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_ERROR);
+            mPlayerError = PlayerError.create(PlayerError.MEDIA_ERROR_IO);
+            submitError(mPlayerError);
             return;
         }
 
@@ -108,13 +118,15 @@ public final class QiNiuPlayer extends AbsPlayer {
         } catch (IOException e) {
             e.printStackTrace();
             FuLog.w(TAG, "Unable to open content: " + mMediaSource.getPath(), e);
-            submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_ERROR);
+            mPlayerError = PlayerError.create(PlayerError.MEDIA_ERROR_IO);
+            submitError(mPlayerError);
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
             FuLog.w(TAG, "Unable to open content: " + mMediaSource.getPath(), e);
-            submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_ERROR);
+            mPlayerError = PlayerError.create(PlayerError.MEDIA_ERROR_IO);
+            submitError(mPlayerError);
+            setPlayerState(mPlayWhenReady, STATE_IDLE);
             return;
         }
     }
@@ -123,9 +135,19 @@ public final class QiNiuPlayer extends AbsPlayer {
         if (mPlayWhenReady == playWhenReady && mCurrentState == state) {
             return;
         }
+        if (mCurrentState == STATE_IDLE) {
+            mVideoWidth = 0;
+            mVideoHeight = 0;
+            mRenderedFirstFrame = false;
+        }
         mPlayWhenReady = playWhenReady;
         mCurrentState = state;
         submitStateChanged(playWhenReady, state);
+    }
+
+    @Override
+    public PlayerError getPlayerError() {
+        return mPlayerError;
     }
 
     @Override
@@ -142,6 +164,10 @@ public final class QiNiuPlayer extends AbsPlayer {
     public void setMediaSource(MediaSource mediaSource) {
         stop();
         mMediaSource = mediaSource;
+        mVideoWidth = 0;
+        mVideoHeight = 0;
+        mPlayerError = null;
+        mRenderedFirstFrame = false;
         mSeekable = false;
         mSeekWhenPrepared = 0;
         mCurrentBufferPercentage = 0;
@@ -206,6 +232,21 @@ public final class QiNiuPlayer extends AbsPlayer {
     }
 
     @Override
+    public boolean hasRenderedFirstFrame() {
+        return mRenderedFirstFrame;
+    }
+
+    @Override
+    public int getVideoWidth() {
+        return mVideoWidth;
+    }
+
+    @Override
+    public int getVideoHeight() {
+        return mVideoHeight;
+    }
+
+    @Override
     public void setVideoSurface(Surface surface) {
         if (mSurface == surface) {
             return;
@@ -264,6 +305,7 @@ public final class QiNiuPlayer extends AbsPlayer {
             mMediaPlayer.stop();
             mMediaPlayer.release();
             mMediaPlayer = null;
+            mPlayerError = null;
             setPlayerState(mPlayWhenReady, STATE_IDLE);
         }
     }
@@ -277,6 +319,7 @@ public final class QiNiuPlayer extends AbsPlayer {
             mMediaSource = null;
             mPlayWhenReady = false;
             mSurface = null;
+            mPlayerError = null;
             setPlayerState(mPlayWhenReady, STATE_IDLE);
         }
     }
@@ -284,11 +327,11 @@ public final class QiNiuPlayer extends AbsPlayer {
     private int getErrorCode(int code) {
         switch (code) {
             case PLOnErrorListener.MEDIA_ERROR_UNKNOWN:
-                return FuPlayerError.MEDIA_ERROR_UNKNOWN;
+                return PlayerError.MEDIA_ERROR_UNKNOWN;
             case PLOnErrorListener.ERROR_CODE_IO_ERROR:
-                return FuPlayerError.MEDIA_ERROR_IO;
+                return PlayerError.MEDIA_ERROR_IO;
             default:
-                return FuPlayerError.MEDIA_ERROR_UNKNOWN;
+                return PlayerError.MEDIA_ERROR_UNKNOWN;
         }
     }
 
@@ -313,6 +356,8 @@ public final class QiNiuPlayer extends AbsPlayer {
             new PLOnVideoSizeChangedListener() {
                 public void onVideoSizeChanged(int width, int height) {
                     FuLog.i(TAG, "onVideoSizeChanged : width=" + width + ",height=" + height);
+                    mVideoWidth = width;
+                    mVideoHeight = height;
                     submitVideoSizeChanged(width, height, 0, 0);
                 }
             };
@@ -332,6 +377,7 @@ public final class QiNiuPlayer extends AbsPlayer {
                     switch (what) {
                         case PLOnInfoListener.MEDIA_INFO_VIDEO_RENDERING_START:
                             FuLog.i(TAG, "onInfo : video_rendering_start");
+                            mRenderedFirstFrame = true;
                             submitRenderedFirstFrame();
                             break;
                         case PLOnInfoListener.MEDIA_INFO_BUFFERING_START:
@@ -362,8 +408,9 @@ public final class QiNiuPlayer extends AbsPlayer {
             new PLOnErrorListener() {
                 public boolean onError(int framework_err) {
                     FuLog.d(TAG, "Error : code=" + getErrorCode(framework_err));
-                    submitError(FuPlayerError.create(getErrorCode(framework_err)));
-                    setPlayerState(mPlayWhenReady, STATE_ERROR);
+                    mPlayerError = PlayerError.create(getErrorCode(framework_err));
+                    submitError(mPlayerError);
+                    setPlayerState(mPlayWhenReady, STATE_IDLE);
                     return true;
                 }
             };

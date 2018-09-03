@@ -1,7 +1,6 @@
 package com.chengfu.fuplayer.player;
 
 import android.graphics.SurfaceTexture;
-import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -9,11 +8,10 @@ import android.view.SurfaceView;
 import android.view.TextureView;
 
 import com.chengfu.fuplayer.FuLog;
-import com.chengfu.fuplayer.FuPlayerError;
+import com.chengfu.fuplayer.PlayerError;
 import com.chengfu.fuplayer.text.TextOutput;
 import com.chengfu.fuplayer.video.VideoListener;
 
-import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPlayer.TextComponent {
@@ -31,6 +29,9 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
 
     @Override
     public void addEventListener(EventListener listener) {
+        if (listener == null || mEventListeners.contains(listener)) {
+            return;
+        }
         mEventListeners.add(listener);
     }
 
@@ -147,9 +148,9 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
         }
     }
 
-    protected final void submitError(FuPlayerError error) {
+    protected final void submitError(PlayerError playerError) {
         for (EventListener listener : mEventListeners) {
-            listener.onError(error);
+            listener.onError(playerError);
         }
     }
 

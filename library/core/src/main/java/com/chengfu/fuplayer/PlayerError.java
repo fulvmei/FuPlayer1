@@ -8,7 +8,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Thrown when a non-recoverable playback failure occurs.
  */
-public final class FuPlayerError {
+public final class PlayerError {
     public static final int MEDIA_ERROR_UNKNOWN = 1;
     public static final int MEDIA_ERROR_IO = 2;
     public static final int MEDIA_ERROR_SERVER_DIED = 3;
@@ -27,19 +27,19 @@ public final class FuPlayerError {
 
     public final String message;
 
-    public static FuPlayerError create() {
-        return new FuPlayerError(MEDIA_ERROR_UNKNOWN, getCodeMessage(MEDIA_ERROR_UNKNOWN));
+    public static PlayerError create() {
+        return new PlayerError(MEDIA_ERROR_UNKNOWN, getCodeMessage(MEDIA_ERROR_UNKNOWN));
     }
 
-    public static FuPlayerError create(@Code int code) {
-        return new FuPlayerError(code, getCodeMessage(code));
+    public static PlayerError create(@Code int code) {
+        return new PlayerError(code, getCodeMessage(code));
     }
 
-    public static FuPlayerError create(@Code int code, String message) {
-        return new FuPlayerError(code, message);
+    public static PlayerError create(@Code int code, String message) {
+        return new PlayerError(code, message);
     }
 
-    private FuPlayerError(@Code int code, String message) {
+    private PlayerError(@Code int code, String message) {
         this.code = code;
         this.message = message;
     }
