@@ -55,16 +55,16 @@
             android:text="seek" />
 
         <Button
-            android:id="@+id/test1"
+            android:id="@+id/add"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="test" />
+            android:text="add" />
 
         <Button
-            android:id="@+id/test2"
+            android:id="@+id/remove"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="test" />
+            android:text="remove" />
 
         <Button
             android:id="@+id/test3"
