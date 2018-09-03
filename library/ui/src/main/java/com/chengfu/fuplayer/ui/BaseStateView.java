@@ -6,8 +6,8 @@ import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
 
-import com.chengfu.fuplayer.FuPlayerError;
-import com.chengfu.fuplayer.player.IPlayer;
+import com.chengfu.fuplayer.PlayerError;
+
 
 public abstract class BaseStateView extends FrameLayout {
 
@@ -25,7 +25,7 @@ public abstract class BaseStateView extends FrameLayout {
 
     abstract void onStateChanged(boolean playWhenReady, int playbackState);
 
-    abstract void onError(FuPlayerError error);
+    abstract void onError(PlayerError error);
 
     abstract void removed();
 

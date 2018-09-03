@@ -15,7 +15,7 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.chengfu.fuplayer.FuLog;
-import com.chengfu.fuplayer.FuPlayerError;
+import com.chengfu.fuplayer.PlayerError;
 import com.chengfu.fuplayer.player.IPlayer;
 import com.chengfu.fuplayer.text.TextOutput;
 import com.chengfu.fuplayer.video.VideoListener;
@@ -261,7 +261,7 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         }
 
         @Override
-        public void onError(FuPlayerError error) {
+        public void onError(PlayerError error) {
             for (BaseStateView stateView : mStateViews) {
                 stateView.onError(error);
             }

@@ -7,12 +7,12 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 
-import com.chengfu.fuplayer.FuPlayerError;
+import com.chengfu.fuplayer.PlayerError;
 import com.chengfu.fuplayer.player.IPlayer;
 
 public class DefaultErrorView extends BaseStateView {
 
-    private FuPlayerError mPlayerError;
+    private PlayerError mPlayerError;
 
     public DefaultErrorView(@NonNull Context context) {
         this(context, null);
@@ -32,15 +32,16 @@ public class DefaultErrorView extends BaseStateView {
 
     @Override
     public void onStateChanged(boolean playWhenReady, int playbackState) {
-        if (playbackState == IPlayer.STATE_ERROR) {
+        if (playbackState == IPlayer.STATE_IDLE && mPlayerError != null) {
             setVisibility(View.VISIBLE);
         } else {
             setVisibility(View.GONE);
         }
+        mPlayerError = null;
     }
 
     @Override
-    public void onError(FuPlayerError error) {
+    public void onError(PlayerError error) {
         mPlayerError = error;
     }
 

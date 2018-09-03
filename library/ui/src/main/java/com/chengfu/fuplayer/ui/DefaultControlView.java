@@ -1,7 +1,6 @@
 package com.chengfu.fuplayer.ui;
 
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.support.v4.view.GestureDetectorCompat;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
@@ -15,7 +14,7 @@ import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.chengfu.fuplayer.FuPlayerError;
+import com.chengfu.fuplayer.PlayerError;
 import com.chengfu.fuplayer.player.IPlayer;
 import com.chengfu.fuplayer.widget.IPlayerControllerView;
 
@@ -197,7 +196,6 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
         tvCurrentTime = findViewById(R.id.default_controller_tvCurrentTime);
         seekBar = findViewById(R.id.default_controller_seekBar);
         tvEndTime = findViewById(R.id.default_controller_tvEndTime);
-
 
 
         imgBtnBack.setOnClickListener(this);
@@ -384,7 +382,7 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
         }
 
         @Override
-        public void onError(FuPlayerError error) {
+        public void onError(PlayerError error) {
 
         }
     }

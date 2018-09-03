@@ -6,9 +6,8 @@ import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.ProgressBar;
 
-import com.chengfu.fuplayer.FuPlayerError;
+import com.chengfu.fuplayer.PlayerError;
 import com.chengfu.fuplayer.player.IPlayer;
 
 public class DefaultLoadingView extends BaseStateView {
@@ -39,7 +38,7 @@ public class DefaultLoadingView extends BaseStateView {
     }
 
     @Override
-    void onError(FuPlayerError error) {
+    void onError(PlayerError error) {
 
     }
 
