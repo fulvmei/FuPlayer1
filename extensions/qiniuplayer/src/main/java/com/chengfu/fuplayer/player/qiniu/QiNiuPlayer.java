@@ -13,9 +13,11 @@ import com.chengfu.fuplayer.FuPlayerError;
 import com.chengfu.fuplayer.MediaSource;
 import com.chengfu.fuplayer.player.AbsPlayer;
 import com.pili.pldroid.player.PLMediaPlayer;
+import com.pili.pldroid.player.PLOnAudioFrameListener;
 import com.pili.pldroid.player.PLOnBufferingUpdateListener;
 import com.pili.pldroid.player.PLOnCompletionListener;
 import com.pili.pldroid.player.PLOnErrorListener;
+import com.pili.pldroid.player.PLOnImageCapturedListener;
 import com.pili.pldroid.player.PLOnInfoListener;
 import com.pili.pldroid.player.PLOnPreparedListener;
 import com.pili.pldroid.player.PLOnSeekCompleteListener;
@@ -76,20 +78,23 @@ public final class QiNiuPlayer extends AbsPlayer {
         mediaPlayer.setOnInfoListener(mInfoListener);
         mediaPlayer.setOnBufferingUpdateListener(mBufferingUpdateListener);
         mediaPlayer.setOnVideoFrameListener(mVideoFrameListener);
+        mediaPlayer.setOnImageCapturedListener(mImageCapturedListener);
+        mediaPlayer.setOnAudioFrameListener(mAudioFrameListener);
         return mediaPlayer;
     }
 
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
-                mCurrentState != STATE_IDLE &&
-                mCurrentState != STATE_PREPARING);
+                mCurrentState == STATE_READY
+                && mCurrentState == STATE_BUFFERING
+                && mCurrentState == STATE_ENDED);
     }
 
     private void openMedia() {
         if (mMediaSource == null || TextUtils.isEmpty(mMediaSource.getPath())) {
             FuLog.w(TAG, "this mediaSource is null or path is empty", new NullPointerException("mediaSource is null"));
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
+            setPlayerState(mPlayWhenReady, STATE_ERROR);
             return;
         }
 
@@ -104,12 +109,12 @@ public final class QiNiuPlayer extends AbsPlayer {
             e.printStackTrace();
             FuLog.w(TAG, "Unable to open content: " + mMediaSource.getPath(), e);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
+            setPlayerState(mPlayWhenReady, STATE_ERROR);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
             FuLog.w(TAG, "Unable to open content: " + mMediaSource.getPath(), e);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
+            setPlayerState(mPlayWhenReady, STATE_ERROR);
             return;
         }
     }
@@ -307,6 +312,7 @@ public final class QiNiuPlayer extends AbsPlayer {
     final PLOnVideoSizeChangedListener mVideoSizeChangedListener =
             new PLOnVideoSizeChangedListener() {
                 public void onVideoSizeChanged(int width, int height) {
+                    FuLog.i(TAG, "onVideoSizeChanged : width=" + width + ",height=" + height);
                     submitVideoSizeChanged(width, height, 0, 0);
                 }
             };
@@ -322,6 +328,7 @@ public final class QiNiuPlayer extends AbsPlayer {
     final PLOnInfoListener mInfoListener =
             new PLOnInfoListener() {
                 public void onInfo(int what, int extra) {
+                    FuLog.i(TAG, "onInfo : what=" + what + ",extra=" + extra);
                     switch (what) {
                         case PLOnInfoListener.MEDIA_INFO_VIDEO_RENDERING_START:
                             FuLog.i(TAG, "onInfo : video_rendering_start");
@@ -346,7 +353,7 @@ public final class QiNiuPlayer extends AbsPlayer {
     final PLOnSeekCompleteListener mSeekCompleteListener = new PLOnSeekCompleteListener() {
         @Override
         public void onSeekComplete() {
-            FuLog.d(TAG, "EVENT_CODE_SEEK_COMPLETE");
+            FuLog.d(TAG, "onSeekComplete");
             submitSeekComplete();
         }
     };
@@ -356,7 +363,7 @@ public final class QiNiuPlayer extends AbsPlayer {
                 public boolean onError(int framework_err) {
                     FuLog.d(TAG, "Error : code=" + getErrorCode(framework_err));
                     submitError(FuPlayerError.create(getErrorCode(framework_err)));
-                    setPlayerState(mPlayWhenReady, STATE_IDLE);
+                    setPlayerState(mPlayWhenReady, STATE_ERROR);
                     return true;
                 }
             };
@@ -364,6 +371,7 @@ public final class QiNiuPlayer extends AbsPlayer {
     final PLOnBufferingUpdateListener mBufferingUpdateListener =
             new PLOnBufferingUpdateListener() {
                 public void onBufferingUpdate(int percent) {
+                    FuLog.d(TAG, "onBufferingUpdate : percent=" + percent);
                     mCurrentBufferPercentage = percent;
                     submitBufferingUpdate(percent);
                 }
@@ -374,6 +382,22 @@ public final class QiNiuPlayer extends AbsPlayer {
         @Override
         public void onVideoFrameAvailable(byte[] bytes, int i, int i1, int i2, int i3, long l) {
             FuLog.d(TAG, "onVideoFrameAvailable");
+        }
+    };
+
+    final PLOnAudioFrameListener mAudioFrameListener = new PLOnAudioFrameListener() {
+
+        @Override
+        public void onAudioFrameAvailable(byte[] bytes, int i, int i1, int i2, int i3, long l) {
+            FuLog.d(TAG, "onAudioFrameAvailable");
+        }
+    };
+
+    final PLOnImageCapturedListener mImageCapturedListener = new PLOnImageCapturedListener() {
+
+        @Override
+        public void onImageCaptured(byte[] bytes) {
+            FuLog.d(TAG, "onImageCaptured");
         }
     };
 }

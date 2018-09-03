@@ -2,6 +2,7 @@ package com.chengfu.fuplayer.player.ijk;
 
 import android.content.Context;
 import android.media.AudioManager;
+import android.os.Bundle;
 import android.view.Surface;
 
 import com.chengfu.fuplayer.FuLog;
@@ -85,20 +86,25 @@ public class IjkPlayer extends AbsPlayer {
         ijkMediaPlayer.setOnErrorListener(mErrorListener);
         ijkMediaPlayer.setOnInfoListener(mInfoListener);
         ijkMediaPlayer.setOnBufferingUpdateListener(mBufferingUpdateListener);
+        ijkMediaPlayer.setOnTimedTextListener(mTimedTextListener);
+//        ijkMediaPlayer.setOnControlMessageListener(mControlMessageListener);
+//        ijkMediaPlayer.setOnMediaCodecSelectListener(mMediaCodecSelectListener);
+//        ijkMediaPlayer.setOnNativeInvokeListener(mNativeInvokeListener);
         return ijkMediaPlayer;
     }
 
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
-                mCurrentState != STATE_IDLE &&
-                mCurrentState != STATE_PREPARING);
+                mCurrentState == STATE_READY
+                && mCurrentState == STATE_BUFFERING
+                && mCurrentState == STATE_ENDED);
     }
 
     private void openMedia() {
         if (mMediaSource == null || (mMediaSource.getPath() == null && mMediaSource.getUri() == null)) {
             FuLog.w(TAG, "this mediaSource is null or path and uri both are empty", new NullPointerException("mediaSource is null"));
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
+            setPlayerState(mPlayWhenReady, STATE_ERROR);
             return;
         }
 
@@ -121,12 +127,12 @@ public class IjkPlayer extends AbsPlayer {
             e.printStackTrace();
             FuLog.e(TAG, "Unable to open content: " + mMediaSource.toString(), e);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
+            setPlayerState(mPlayWhenReady, STATE_ERROR);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
             FuLog.e(TAG, "Unable to open content: " + mMediaSource.toString(), e);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
+            setPlayerState(mPlayWhenReady, STATE_ERROR);
             return;
         }
     }
@@ -337,6 +343,7 @@ public class IjkPlayer extends AbsPlayer {
             new IjkMediaPlayer.OnVideoSizeChangedListener() {
                 @Override
                 public void onVideoSizeChanged(IMediaPlayer iMediaPlayer, int width, int height, int unappliedRotationDegrees, int pixelWidthHeightRatio) {
+                    FuLog.d(TAG, "onVideoSizeChanged : width=" + width + ",height=" + height + ",unappliedRotationDegrees=" + unappliedRotationDegrees + ",pixelWidthHeightRatio=" + pixelWidthHeightRatio);
                     submitVideoSizeChanged(width, height, 0, 0);
                 }
             };
@@ -344,7 +351,7 @@ public class IjkPlayer extends AbsPlayer {
     final IjkMediaPlayer.OnCompletionListener mCompletionListener =
             new IjkMediaPlayer.OnCompletionListener() {
                 public void onCompletion(IMediaPlayer mp) {
-                    FuLog.i(TAG, "onCompletion");
+                    FuLog.d(TAG, "onCompletion");
                     setPlayerState(mPlayWhenReady, STATE_ENDED);
                 }
             };
@@ -352,6 +359,7 @@ public class IjkPlayer extends AbsPlayer {
     final IjkMediaPlayer.OnInfoListener mInfoListener =
             new IjkMediaPlayer.OnInfoListener() {
                 public boolean onInfo(IMediaPlayer mp, int what, int extra) {
+                    FuLog.d(TAG, "onInfo : what=" + what + ",extra=" + extra);
                     switch (what) {
                         case IjkMediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START:
                             FuLog.i(TAG, "onInfo : video_rendering_start");
@@ -377,7 +385,7 @@ public class IjkPlayer extends AbsPlayer {
     final IjkMediaPlayer.OnSeekCompleteListener mSeekCompleteListener = new IjkMediaPlayer.OnSeekCompleteListener() {
         @Override
         public void onSeekComplete(IMediaPlayer mp) {
-            FuLog.d(TAG, "EVENT_CODE_SEEK_COMPLETE");
+            FuLog.d(TAG, "onSeekComplete");
             submitSeekComplete();
         }
     };
@@ -385,9 +393,9 @@ public class IjkPlayer extends AbsPlayer {
     final IjkMediaPlayer.OnErrorListener mErrorListener =
             new IjkMediaPlayer.OnErrorListener() {
                 public boolean onError(IMediaPlayer mp, int framework_err, int impl_err) {
-                    FuLog.d(TAG, "Error : code" + getErrorCode(framework_err));
+                    FuLog.d(TAG, "Error : framework_err=" + framework_err + ",impl_err=" + impl_err);
                     submitError(FuPlayerError.create(getErrorCode(framework_err)));
-                    setPlayerState(mPlayWhenReady, STATE_IDLE);
+                    setPlayerState(mPlayWhenReady, STATE_ERROR);
                     return true;
                 }
             };
@@ -396,6 +404,7 @@ public class IjkPlayer extends AbsPlayer {
             new IjkMediaPlayer.OnBufferingUpdateListener() {
                 @Override
                 public void onBufferingUpdate(IMediaPlayer mp, int percent) {
+                    FuLog.d(TAG, "OnBufferingUpdate : percent" + percent);
                     mCurrentBufferPercentage = percent;
                     submitBufferingUpdate(percent);
                 }
@@ -405,7 +414,8 @@ public class IjkPlayer extends AbsPlayer {
 
         @Override
         public void onTimedText(IMediaPlayer iMediaPlayer, IjkTimedText ijkTimedText) {
-
+            FuLog.d(TAG, "onTimedText : ijkTimedText" + ijkTimedText != null ? ijkTimedText.getText() : "");
         }
     };
+
 }

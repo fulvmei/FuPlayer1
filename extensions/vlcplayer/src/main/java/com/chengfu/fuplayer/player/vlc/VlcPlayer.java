@@ -75,15 +75,16 @@ public final class VlcPlayer extends AbsPlayer {
 
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
-                mCurrentState != STATE_IDLE &&
-                mCurrentState != STATE_PREPARING);
+                mCurrentState == STATE_READY
+                && mCurrentState == STATE_BUFFERING
+                && mCurrentState == STATE_ENDED);
     }
 
     private void openMedia() {
         if (mMediaSource == null || (mMediaSource.getPath() == null && mMediaSource.getUri() == null)) {
             FuLog.w(TAG, "this mediaSource is null or path and uri both are empty", new NullPointerException("mediaSource is null"));
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
+            setPlayerState(mPlayWhenReady, STATE_ERROR);
             return;
         }
 
@@ -106,12 +107,12 @@ public final class VlcPlayer extends AbsPlayer {
             e.printStackTrace();
             FuLog.e(TAG, "Unable to open content: " + mMediaSource.toString(), e);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
+            setPlayerState(mPlayWhenReady, STATE_ERROR);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
             FuLog.e(TAG, "Unable to open content: " + mMediaSource.toString(), e);
             submitError(FuPlayerError.create(FuPlayerError.MEDIA_ERROR_IO));
-            setPlayerState(mPlayWhenReady, STATE_IDLE);
+            setPlayerState(mPlayWhenReady, STATE_ERROR);
             return;
         }
     }
@@ -374,7 +375,7 @@ public final class VlcPlayer extends AbsPlayer {
                 public boolean onError(MediaPlayer mp, int framework_err, int impl_err) {
                     FuLog.d(TAG, "Error : code" + getErrorCode(framework_err));
                     submitError(FuPlayerError.create(getErrorCode(framework_err)));
-                    setPlayerState(mPlayWhenReady, STATE_IDLE);
+                    setPlayerState(mPlayWhenReady, STATE_ERROR);
                     return true;
                 }
             };

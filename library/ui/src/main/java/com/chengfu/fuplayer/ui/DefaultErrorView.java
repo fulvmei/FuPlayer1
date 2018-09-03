@@ -30,7 +30,6 @@ public class DefaultErrorView extends BaseStateView {
 
     @Override
     public void onStateChanged(boolean playWhenReady, int playbackState) {
-        System.out.println();
         if (playbackState == IPlayer.STATE_ERROR) {
             setVisibility(View.VISIBLE);
         } else {
