@@ -184,6 +184,9 @@ public class PlayerView extends FrameLayout implements IPlayerView {
             }
             player.addEventListener(mComponentListener);
         }
+        for (BaseStateView stateView : mStateViews) {
+            stateView.setPlayer(player);
+        }
     }
 
     @Override
@@ -197,10 +200,7 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         }
         addView(stateView);
         mStateViews.add(stateView);
-
-        if (mPlayer != null) {
-            stateView.onStateChanged(mPlayer.getPlayWhenReady(), mPlayer.getPlayerState());
-        }
+        stateView.setPlayer(mPlayer);
     }
 
     public void removeStateView(BaseStateView stateView) {
@@ -209,7 +209,7 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         }
         removeView(stateView);
         mStateViews.remove(stateView);
-        stateView.removed();
+        stateView.setPlayer(null);
     }
 
     /**
@@ -240,32 +240,7 @@ public class PlayerView extends FrameLayout implements IPlayerView {
     }
 
 
-    private final class ComponentListener implements IPlayer.EventListener, VideoListener, TextOutput, OnLayoutChangeListener {
-
-        @Override
-        public void onStateChanged(boolean playWhenReady, int playbackState) {
-            for (BaseStateView stateView : mStateViews) {
-                stateView.onStateChanged(playWhenReady, playbackState);
-            }
-        }
-
-        @Override
-        public void onBufferingUpdate(int percent) {
-
-        }
-
-
-        @Override
-        public void onSeekComplete() {
-
-        }
-
-        @Override
-        public void onError(PlayerError error) {
-            for (BaseStateView stateView : mStateViews) {
-                stateView.onError(error);
-            }
-        }
+    private final class ComponentListener extends IPlayer.DefaultEventListener implements VideoListener, TextOutput, OnLayoutChangeListener {
 
         @Override
         public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
