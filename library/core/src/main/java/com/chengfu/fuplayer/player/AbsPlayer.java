@@ -29,9 +29,6 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
 
     @Override
     public void addEventListener(EventListener listener) {
-        if (listener == null || mEventListeners.contains(listener)) {
-            return;
-        }
         mEventListeners.add(listener);
     }
 
@@ -171,6 +168,7 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
+            FuLog.d(TAG,"surfaceCreated");
             setVideoSurface(holder.getSurface());
         }
 
@@ -181,11 +179,13 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
+            FuLog.d(TAG,"surfaceDestroyed");
             setVideoSurface(null);
         }
 
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
+            FuLog.d(TAG,"onSurfaceTextureAvailable");
             setVideoSurface(new Surface(surfaceTexture));
         }
 
@@ -196,6 +196,7 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
 
         @Override
         public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+            FuLog.d(TAG,"onSurfaceTextureDestroyed");
             setVideoSurface(null);
             return true;
         }

@@ -88,6 +88,7 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         mSurfaceContainer = findViewById(R.id.surface_container);
         mShutterView = findViewById(R.id.view_shutter);
         mShutterView.setBackground(getBackground());
+        mShutterView.setVisibility(View.VISIBLE);
 
         setSurfaceViewType(surfaceType);
 
@@ -164,13 +165,16 @@ public class PlayerView extends FrameLayout implements IPlayerView {
             }
         }
         mPlayer = player;
+        mShutterView.setVisibility(View.VISIBLE);
 
         if (player != null) {
-            for (BaseStateView stateView : mStateViews) {
-                stateView.onStateChanged(player.getPlayWhenReady(), player.getPlayerState());
-            }
             IPlayer.VideoComponent newVideoComponent = player.getVideoComponent();
             if (newVideoComponent != null) {
+                if (newVideoComponent.hasRenderedFirstFrame()) {
+                    mShutterView.setVisibility(View.INVISIBLE);
+                } else {
+                    mShutterView.setVisibility(View.VISIBLE);
+                }
                 if (mSurfaceView instanceof TextureView) {
                     newVideoComponent.setVideoTextureView((TextureView) mSurfaceView);
                 } else if (mSurfaceView instanceof SurfaceView) {
