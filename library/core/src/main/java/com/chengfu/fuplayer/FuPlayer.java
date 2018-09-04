@@ -281,7 +281,7 @@ public class FuPlayer implements IPlayer {
 
     @Override
     public boolean getPlayWhenReady() {
-        return false;
+        return mPlayer.getPlayWhenReady();
     }
 
 //    @Override

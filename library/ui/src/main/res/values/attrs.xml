@@ -30,5 +30,7 @@
         <attr name="controller_layout_id" />
     </declare-styleable>
 
-    <declare-styleable name="PlayerControlView"></declare-styleable>
+    <declare-styleable name="PlayerControlView">
+        <attr name="use" format="boolean" />
+    </declare-styleable>
 </resources>

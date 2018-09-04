@@ -15,7 +15,6 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.chengfu.fuplayer.FuLog;
-import com.chengfu.fuplayer.PlayerError;
 import com.chengfu.fuplayer.player.IPlayer;
 import com.chengfu.fuplayer.text.TextOutput;
 import com.chengfu.fuplayer.video.VideoListener;
@@ -88,7 +87,8 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         mSurfaceContainer = findViewById(R.id.surface_container);
         mShutterView = findViewById(R.id.view_shutter);
         mShutterView.setBackground(getBackground());
-        mShutterView.setVisibility(View.VISIBLE);
+
+        updtatAllViews();
 
         setSurfaceViewType(surfaceType);
 
@@ -143,6 +143,29 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         return mResizeMode;
     }
 
+    private void updtatShutterView() {
+        if (mPlayer != null && mPlayer.getVideoComponent() != null) {
+            if (mPlayer.getVideoComponent().hasRenderedFirstFrame()) {
+                mShutterView.setVisibility(View.GONE);
+            } else {
+                mShutterView.setVisibility(View.VISIBLE);
+            }
+        } else {
+            mShutterView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void updtatStateViews() {
+        for (BaseStateView stateView : mStateViews) {
+            stateView.setPlayer(mPlayer);
+        }
+    }
+
+    private void updtatAllViews() {
+        updtatShutterView();
+        updtatStateViews();
+    }
+
     @Override
     public void setPlayer(IPlayer player) {
         if (mPlayer == player) {
@@ -165,16 +188,10 @@ public class PlayerView extends FrameLayout implements IPlayerView {
             }
         }
         mPlayer = player;
-        mShutterView.setVisibility(View.VISIBLE);
 
         if (player != null) {
             IPlayer.VideoComponent newVideoComponent = player.getVideoComponent();
             if (newVideoComponent != null) {
-                if (newVideoComponent.hasRenderedFirstFrame()) {
-                    mShutterView.setVisibility(View.INVISIBLE);
-                } else {
-                    mShutterView.setVisibility(View.VISIBLE);
-                }
                 if (mSurfaceView instanceof TextureView) {
                     newVideoComponent.setVideoTextureView((TextureView) mSurfaceView);
                 } else if (mSurfaceView instanceof SurfaceView) {
@@ -188,9 +205,7 @@ public class PlayerView extends FrameLayout implements IPlayerView {
             }
             player.addEventListener(mComponentListener);
         }
-        for (BaseStateView stateView : mStateViews) {
-            stateView.setPlayer(player);
-        }
+        updtatAllViews();
     }
 
     @Override

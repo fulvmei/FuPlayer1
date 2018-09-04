@@ -1,6 +1,7 @@
 package com.chengfu.fuplayer.ui;
 
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.support.v4.view.GestureDetectorCompat;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
@@ -10,11 +11,11 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.MediaController;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import com.chengfu.fuplayer.PlayerError;
 import com.chengfu.fuplayer.player.IPlayer;
 import com.chengfu.fuplayer.widget.IPlayerControllerView;
 
@@ -150,7 +151,7 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
 
     @Override
     public boolean isShowing() {
-        return false;
+        return true;
     }
 
     public DefaultControlView(Context context) {
@@ -167,14 +168,14 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
         mContext = context;
 
         if (attrs != null) {
-//            TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.PlayerControlView, 0, 0);
-//            try {
-////                surfaceType = a.getInt(R.styleable.PlayerView_surface_type, SURFACE_TYPE_SURFACE_VIEW);
-////                resizeMode = a.getInt(R.styleable.PlayerView_resize_mode, RESIZE_MODE_FIT);
-//
-//            } finally {
-//                a.recycle();
-//            }
+            TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.PlayerControlView, 0, 0);
+            try {
+//                surfaceType = a.getInt(R.styleable.PlayerView_surface_type, SURFACE_TYPE_SURFACE_VIEW);
+//                resizeMode = a.getInt(R.styleable.PlayerView_resize_mode, RESIZE_MODE_FIT);
+
+            } finally {
+                a.recycle();
+            }
         }
 
         LayoutInflater.from(context).inflate(R.layout.default_controller_view, this);
@@ -208,12 +209,37 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
         mFormatter = new Formatter(mFormatBuilder, Locale.getDefault());
     }
 
+    @Override
+    public void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        mAttachedToWindow = true;
+//        if (hideAtMs != C.TIME_UNSET) {
+//            long delayMs = hideAtMs - SystemClock.uptimeMillis();
+//            if (delayMs <= 0) {
+//                hide();
+//            } else {
+//                postDelayed(hideAction, delayMs);
+//            }
+//        } else if (isVisible()) {
+//            hideAfterTimeout();
+//        }
+        updateAll();
+    }
+
+    @Override
+    public void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        mAttachedToWindow = false;
+//        removeCallbacks(updateProgressAction);
+//        removeCallbacks(hideAction);
+    }
+
     private void updateAll() {
         updatePlayPauseButton();
 //        updateNavigation();
 //        updateRepeatModeButton();
 //        updateShuffleButton();
-//        updateProgress();
+        updateProgress();
     }
 
     private void updatePlayPauseButton() {
@@ -251,6 +277,7 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
         long duration = 0;
 
     }
+
 
     public void setOnShowHideChangedListener(OnShowHideChangedListener listener) {
         mOnShowHideChangedListener = listener;
@@ -362,7 +389,7 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
         return super.dispatchKeyEvent(event);
     }
 
-    private final class ComponentListener implements IPlayer.EventListener {
+    private final class ComponentListener extends IPlayer.DefaultEventListener {
 
 
         @Override
@@ -374,33 +401,24 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
         public void onBufferingUpdate(int percent) {
 
         }
-
-
-        @Override
-        public void onSeekComplete() {
-
-        }
-
-        @Override
-        public void onError(PlayerError error) {
-
-        }
     }
 
     @Override
     public void onClick(View v) {
+        if (mPlayer == null) {
+            return;
+        }
         if (imgBtnBack == v) {
             if (mOnBackClickListener != null) {
                 mOnBackClickListener.onBackClick();
             }
         }
         if (mImgBtnPlayPause == v) {
-            if (isPlaying()) {
-//                mPlayer.pause();
+            if (mPlayer.getPlayWhenReady()) {
+                mPlayer.setPlayWhenReady(false);
             } else {
-//                mPlayer.start();
+                mPlayer.setPlayWhenReady(true);
             }
-
             updatePlayPauseButton();
         }
     }

@@ -95,9 +95,8 @@ public final class QiNiuPlayer extends AbsPlayer {
 
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
-                mCurrentState == STATE_READY
-                && mCurrentState == STATE_BUFFERING
-                && mCurrentState == STATE_ENDED);
+                mCurrentState != STATE_IDLE
+                && mCurrentState != STATE_PREPARING);
     }
 
     private void openMedia() {
