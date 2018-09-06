@@ -18,6 +18,7 @@ import com.chengfu.fuplayer.FuLog;
 import com.chengfu.fuplayer.player.IPlayer;
 import com.chengfu.fuplayer.text.TextOutput;
 import com.chengfu.fuplayer.video.VideoListener;
+import com.chengfu.fuplayer.widget.IPlayerControllerView;
 import com.chengfu.fuplayer.widget.IPlayerView;
 
 import java.util.List;
@@ -42,6 +43,7 @@ public class PlayerView extends FrameLayout implements IPlayerView {
     private View mSurfaceView;
     private View mShutterView;
     private final CopyOnWriteArraySet<BaseStateView> mStateViews = new CopyOnWriteArraySet<>();
+    private IPlayerControllerView mControllerView;
 
     private IPlayer mPlayer;
     private ComponentListener mComponentListener;
@@ -229,6 +231,23 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         removeView(stateView);
         mStateViews.remove(stateView);
         stateView.setPlayer(null);
+    }
+
+    public void setControllerView(IPlayerControllerView controllerView) {
+        if (mControllerView == controllerView) {
+            return;
+        }
+        if (mControllerView != null) {
+            mControllerView.setPlayer(null);
+        }
+        mControllerView = controllerView;
+        if (controllerView != null) {
+            controllerView.setPlayer(mPlayer);
+        }
+    }
+
+    public IPlayerControllerView getControllerView() {
+        return mControllerView;
     }
 
     /**

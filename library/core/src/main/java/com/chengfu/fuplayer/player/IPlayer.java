@@ -127,7 +127,7 @@ public interface IPlayer {
     }
 
     int STATE_IDLE = 1;
-    int STATE_PREPARING = 2;
+//    int STATE_PREPARING = 2;
     int STATE_READY = 3;
     int STATE_BUFFERING = 4;
     int STATE_ENDED = 5;

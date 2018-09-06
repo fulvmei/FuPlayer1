@@ -30,7 +30,7 @@ public class DefaultLoadingView extends BaseStateView {
 
     @Override
     public void onStateChanged(boolean playWhenReady, int playbackState) {
-        if (playWhenReady == true && (playbackState == IPlayer.STATE_PREPARING || playbackState == IPlayer.STATE_BUFFERING)) {
+        if (playWhenReady == true && playbackState == IPlayer.STATE_BUFFERING) {
             setVisibility(View.VISIBLE);
         } else {
             setVisibility(View.GONE);

@@ -48,6 +48,7 @@ public final class QiNiuPlayer extends AbsPlayer {
     private int mCurrentState = -1;
 
     private long mSeekWhenPrepared;  // recording the seek position while preparing
+    private boolean mIsPreparing;
 
     public QiNiuPlayer(Context context) {
         this(context, null);
@@ -96,7 +97,7 @@ public final class QiNiuPlayer extends AbsPlayer {
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
                 mCurrentState != STATE_IDLE
-                && mCurrentState != STATE_PREPARING);
+                && !mIsPreparing);
     }
 
     private void openMedia() {
@@ -110,9 +111,11 @@ public final class QiNiuPlayer extends AbsPlayer {
         try {
             mMediaPlayer = createPlayer();
             mMediaPlayer.setDataSource(mMediaSource.getPath(), mMediaSource.getHeaders());
+
+            mIsPreparing=true;
             mMediaPlayer.prepareAsync();
 
-            setPlayerState(mPlayWhenReady, STATE_PREPARING);
+            setPlayerState(mPlayWhenReady, STATE_BUFFERING);
             FuLog.i(TAG, "Set media source for the player: source=" + mMediaSource.toString());
         } catch (IOException e) {
             e.printStackTrace();
@@ -338,6 +341,8 @@ public final class QiNiuPlayer extends AbsPlayer {
         @Override
         public void onPrepared(int i) {
             FuLog.d(TAG, "onPrepared...");
+
+            mIsPreparing=false;
 
             long seekToPosition = mSeekWhenPrepared;  // mSeekWhenPrepared may be changed after seekTo() call
             if (seekToPosition != 0) {

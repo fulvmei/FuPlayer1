@@ -94,8 +94,7 @@ public class ExoPlayer extends AbsPlayer {
 
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
-                mCurrentState != STATE_IDLE
-                && mCurrentState != STATE_PREPARING);
+                mCurrentState != STATE_IDLE);
     }
 
     private MediaSource getMediaSource(com.chengfu.fuplayer.MediaSource mediaSource) {

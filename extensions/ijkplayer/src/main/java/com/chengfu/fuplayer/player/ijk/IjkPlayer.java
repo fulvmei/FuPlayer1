@@ -42,6 +42,7 @@ public class IjkPlayer extends AbsPlayer {
     private int mCurrentState = -1;
 
     private long mSeekWhenPrepared;  // recording the seek position while preparing
+    private boolean mIsPreparing;
 
     static {
         IjkMediaPlayer.loadLibrariesOnce(null);
@@ -107,7 +108,7 @@ public class IjkPlayer extends AbsPlayer {
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
                 mCurrentState != STATE_IDLE
-                && mCurrentState != STATE_PREPARING);
+                && !mIsPreparing);
     }
 
     private void openMedia() {
@@ -129,9 +130,10 @@ public class IjkPlayer extends AbsPlayer {
                     mMediaPlayer.setDataSource(mContext, mMediaSource.getUri());
                 }
             }
+            mIsPreparing=true;
             mMediaPlayer.prepareAsync();
 
-            setPlayerState(mPlayWhenReady, STATE_PREPARING);
+            setPlayerState(mPlayWhenReady, STATE_BUFFERING);
             FuLog.i(TAG, "Set media source for the player: source=" + mMediaSource.toString());
         } catch (IOException e) {
             e.printStackTrace();
@@ -370,6 +372,7 @@ public class IjkPlayer extends AbsPlayer {
         public void onPrepared(IMediaPlayer mp) {
             FuLog.d(TAG, "onPrepared...");
 
+            mIsPreparing=false;
             long seekToPosition = mSeekWhenPrepared;  // mSeekWhenPrepared may be changed after seekTo() call
             if (seekToPosition != 0) {
                 seekTo(seekToPosition);

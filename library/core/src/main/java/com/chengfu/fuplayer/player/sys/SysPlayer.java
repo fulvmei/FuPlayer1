@@ -39,6 +39,7 @@ public final class SysPlayer extends AbsPlayer {
     private int mCurrentState = -1;
 
     private long mSeekWhenPrepared;  // recording the seek position while preparing
+    private boolean mIsPreparing;
 
     public SysPlayer(Context context) {
         this(context, null);
@@ -81,7 +82,7 @@ public final class SysPlayer extends AbsPlayer {
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
                 mCurrentState != STATE_IDLE
-                && mCurrentState != STATE_PREPARING);
+                && !mIsPreparing);
     }
 
     private void openMedia() {
@@ -104,8 +105,9 @@ public final class SysPlayer extends AbsPlayer {
                     mMediaPlayer.setDataSource(mContext, mMediaSource.getUri());
                 }
             }
+            mIsPreparing = true;
             mMediaPlayer.prepareAsync();
-            setPlayerState(mPlayWhenReady, STATE_PREPARING);
+            setPlayerState(mPlayWhenReady, STATE_BUFFERING);
             FuLog.i(TAG, "Set media source for the player: source=" + mMediaSource.toString());
         } catch (IOException e) {
             e.printStackTrace();
@@ -303,6 +305,7 @@ public final class SysPlayer extends AbsPlayer {
             mMediaPlayer.release();
             mMediaPlayer = null;
             mPlayerError = null;
+            mIsPreparing = false;
             setPlayerState(mPlayWhenReady, STATE_IDLE);
         }
     }
@@ -317,6 +320,7 @@ public final class SysPlayer extends AbsPlayer {
             mPlayWhenReady = false;
             mSurface = null;
             mPlayerError = null;
+            mIsPreparing = false;
             setPlayerState(mPlayWhenReady, STATE_IDLE);
         }
     }
@@ -346,6 +350,7 @@ public final class SysPlayer extends AbsPlayer {
     final MediaPlayer.OnPreparedListener mPreparedListener = new MediaPlayer.OnPreparedListener() {
         public void onPrepared(MediaPlayer mp) {
             FuLog.d(TAG, "onPrepared...");
+            mIsPreparing = false;
             long seekToPosition = mSeekWhenPrepared;  // mSeekWhenPrepared may be changed after seekTo() call
             if (seekToPosition != 0) {
                 seekTo(seekToPosition);

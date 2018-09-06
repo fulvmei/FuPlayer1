@@ -19,14 +19,7 @@ public class FuPlayer implements IPlayer {
     private IPlayerView mPlayerView;
     private IPlayerControllerView mPlayerController;
 
-    private Surface mSurface;
-
     private long mCurrentPosition;
-
-//    private TimerCounterProxy mTimerCounterProxy;
-//    private OnPlayerEventListener mOnPlayerEventListener;
-//    private OnErrorEventListener mOnErrorEventListener;
-//    private OnBufferingListener mOnBufferingListener;
 
     public FuPlayer() {
 
@@ -42,7 +35,6 @@ public class FuPlayer implements IPlayer {
         }
         mPlayer = player;
 
-        initListener();
         if (mMediaSource != null) {
             mPlayer.setMediaSource(mMediaSource);
         }
@@ -82,195 +74,45 @@ public class FuPlayer implements IPlayer {
 
         mPlayerController = playerController;
 
-        playerController.setPlayer(this);
-        if (mPlayerView != null) {
-//            mPlayerView.setPlayerControllerView(playerController);
-        }
-        attachMediaController();
+        playerController.setPlayer(mPlayer);
     }
 
     public IPlayerControllerView getPlayerController() {
         return mPlayerController;
     }
 
-//    private void initPlayer() {
-//        mPlayer.setSurface(mPlayerView.getSurface());
-//        mPlayerView.setSurfaceCallBack(new IPlayerView.SurfaceCallBack() {
-//            @Override
-//            public void onSurfaceAvailable(Surface surface) {
-//                FuLog.e("HHH", "onSurfaceAvailable");
-//                mPlayer.setSurface(surface);
-//            }
-//
-//            @Override
-//            public void onSurfaceDestroyed(Surface surface) {
-//                FuLog.e("HHH", "onSurfaceDestroyed");
-//                mPlayer.setSurface(null);
-//            }
-//        });
-//    }
-
-    /**
-     * setting timer proxy state. default open.
-     *
-     * @param useTimerProxy
-     */
-    public void setUseTimerProxy(boolean useTimerProxy) {
-//        this.mTimerCounterProxy.setUseProxy(useTimerProxy);
-    }
-
-    private void attachMediaController() {
-        if (mPlayerController != null) {
-            mPlayerController.setPlayer(this);
-            mPlayerController.setControllerEnabled(true);
-        }
-    }
-
-
-    private void initListener() {
-//        mTimerCounterProxy.setOnCounterUpdateListener(mOnCounterUpdateListener);
-//        if (mPlayer != null) {
-//            mPlayer.setOnPlayerEventListener(mInternalPlayerEventListener);
-//            mPlayer.setOnErrorEventListener(mInternalErrorEventListener);
-//            mPlayer.setOnBufferingListener(mInternalBufferingListener);
-//        }
-    }
-
-    //destroy some listener
-    private void resetListener() {
-//        mTimerCounterProxy.setOnCounterUpdateListener(null);
-//        if (mPlayer != null) {
-//            mPlayer.setOnPlayerEventListener(null);
-//            mPlayer.setOnErrorEventListener(null);
-//            mPlayer.setOnBufferingListener(null);
-//        }
-    }
-
-//    private TimerCounterProxy.OnCounterUpdateListener mOnCounterUpdateListener =
-//            new TimerCounterProxy.OnCounterUpdateListener() {
-//                @Override
-//                public void onCounter() {
-//                    long curr = getCurrentPosition();
-//                    long duration = getDuration();
-//                    int bufferPercentage = getBufferPercentage();
-//                    //check valid data.
-//                    if (duration <= 0 || curr < 0)
-//                        return;
-//                    Bundle bundle = BundlePool.obtain();
-//                    bundle.putLong(EventKey.INT_ARG1, curr);
-//                    bundle.putLong(EventKey.INT_ARG2, duration);
-//                    bundle.putLong(EventKey.INT_ARG3, bufferPercentage);
-//                    callBackPlayEventListener(
-//                            OnPlayerEventListener.PLAYER_EVENT_ON_TIMER_UPDATE, bundle);
-//                }
-//            };
-
-//    private OnPlayerEventListener mInternalPlayerEventListener =
-//            new OnPlayerEventListener() {
-//                @Override
-//                public void onPlayerEvent(int eventCode, Bundle bundle) {
-//                    mTimerCounterProxy.proxyPlayEvent(eventCode, bundle);
-//                    callBackPlayEventListener(eventCode, bundle);
-//                }
-//            };
-
-//    private OnErrorEventListener mInternalErrorEventListener =
-//            new OnErrorEventListener() {
-//                @Override
-//                public void onErrorEvent(int eventCode, Bundle bundle) {
-//                    mTimerCounterProxy.proxyErrorEvent(eventCode, bundle);
-//                    callBackErrorEventListener(eventCode, bundle);
-//                }
-//            };
-
-//    private OnBufferingListener mInternalBufferingListener =
-//            new OnBufferingListener() {
-//                @Override
-//                public void onBufferingUpdate(int bufferPercentage, Bundle extra) {
-//                    if (mOnBufferingListener != null)
-//                        mOnBufferingListener.onBufferingUpdate(bufferPercentage, extra);
-//                }
-//            };
-
-    private boolean isPlayerAvailable() {
-        return mPlayer != null;
-    }
-
-    //must last callback event listener , because bundle will be recycle after callback.
-    private void callBackPlayEventListener(int eventCode, Bundle bundle) {
-//        if (mOnPlayerEventListener != null)
-//            mOnPlayerEventListener.onPlayerEvent(eventCode, bundle);
-    }
-
-    //must last callback event listener , because bundle will be recycle after callback.
-    private void callBackErrorEventListener(int eventCode, Bundle bundle) {
-//        if (mOnErrorEventListener != null)
-//            mOnErrorEventListener.onErrorEvent(eventCode, bundle);
-    }
-
-//    @Override
-//    public void setOnPlayerEventListener(OnPlayerEventListener onPlayerEventListener) {
-//        this.mOnPlayerEventListener = onPlayerEventListener;
-//    }
-//
-//    @Override
-//    public void setOnErrorEventListener(OnErrorEventListener onErrorEventListener) {
-//        this.mOnErrorEventListener = onErrorEventListener;
-//    }
-//
-//    @Override
-//    public void setOnBufferingListener(OnBufferingListener onBufferingListener) {
-//        this.mOnBufferingListener = onBufferingListener;
-//    }
-
-
-//    @Override
-//    public void option(int code, Bundle bundle) {
-//
-//    }
-
-//    @Override
-//    public void setDataSource(DataSource dataSource) {
-//        this.mDataSource = dataSource;
-//        //when data source update, attach listener.
-//        initListener();
-//        mPlayer.setDataSource(dataSource);
-//    }
-
-//    @Override
-//    public void setDisplay(SurfaceHolder surfaceHolder) {
-//        if (isPlayerAvailable())
-//            mPlayer.setDisplay(surfaceHolder);
-//    }
-
     @Override
     public VideoComponent getVideoComponent() {
-        return null;
+        return mPlayer != null ? mPlayer.getVideoComponent() : null;
     }
 
     @Override
     public TextComponent getTextComponent() {
-        return null;
+        return mPlayer != null ? mPlayer.getTextComponent() : null;
     }
 
     @Override
     public void addEventListener(EventListener listener) {
-
+        if (mPlayer != null) {
+            mPlayer.addEventListener(listener);
+        }
     }
 
     @Override
     public void removeEventListener(EventListener listener) {
-
+        if (mPlayer != null) {
+            mPlayer.removeEventListener(listener);
+        }
     }
 
     @Override
     public PlayerError getPlayerError() {
-        return null;
+        return mPlayer != null ? mPlayer.getPlayerError() : null;
     }
 
     @Override
     public int getPlayerState() {
-        return 0;
+        return mPlayer != null ? mPlayer.getPlayerState() : IPlayer.STATE_IDLE;
     }
 
 
@@ -284,26 +126,11 @@ public class FuPlayer implements IPlayer {
         return mPlayer.getPlayWhenReady();
     }
 
-//    @Override
-//    public void setSurface(Surface surface) {
-//        if (mSurface == surface) {
-//            return;
-//        }
-//        if (isPlayerAvailable()) {
-//            mPlayer.setSurface(surface);
-//        }
-//        mSurface = surface;
-//    }
-
-//    @Override
-//    public float getVolume() {
-//        return mPlayer.getVolume();
-//    }
 
     @Override
     public void setVolume(float volume) {
-        if (isPlayerAvailable())
-            mPlayer.setVolume(volume);
+
+        mPlayer.setVolume(volume);
     }
 
     @Override
@@ -316,24 +143,11 @@ public class FuPlayer implements IPlayer {
         return 0;
     }
 
-//    @Override
-//    public void setSpeed(float speed) {
-//        if (isPlayerAvailable())
-//            mPlayer.setSpeed(speed);
-//    }
-
-//    @Override
-//    public int getBufferPercentage() {
-//        if (isPlayerAvailable())
-//            return mPlayer.getBufferPercentage();
-//        return 0;
-//    }
-
     @Override
     public boolean isPlaying() {
-        if (isPlayerAvailable())
-            return mPlayer.isPlaying();
-        return false;
+
+        return mPlayer.isPlaying();
+
     }
 
     @Override
@@ -343,23 +157,23 @@ public class FuPlayer implements IPlayer {
 
     @Override
     public long getCurrentPosition() {
-        if (isPlayerAvailable())
-            return mPlayer.getCurrentPosition();
-        return 0;
+
+        return mPlayer.getCurrentPosition();
+
     }
 
     @Override
     public long getDuration() {
-        if (isPlayerAvailable())
-            return mPlayer.getDuration();
-        return 0;
+
+        return mPlayer.getDuration();
+
     }
 
     @Override
     public int getAudioSessionId() {
-        if (isPlayerAvailable())
-            return mPlayer.getAudioSessionId();
-        return 0;
+
+        return mPlayer.getAudioSessionId();
+
     }
 
     @Override
@@ -368,24 +182,10 @@ public class FuPlayer implements IPlayer {
         mPlayer.setMediaSource(mediaSource);
     }
 
-//    @Override
-//    public int getVideoWidth() {
-//        if (isPlayerAvailable())
-//            return mPlayer.getVideoWidth();
-//        return 0;
-//    }
-//
-//    @Override
-//    public int getVideoHeight() {
-//        if (isPlayerAvailable())
-//            return mPlayer.getVideoHeight();
-//        return 0;
-//    }
-
     @Override
     public void setLooping(boolean looping) {
-        if (isPlayerAvailable())
-            mPlayer.setLooping(looping);
+
+        mPlayer.setLooping(looping);
 
     }
 
@@ -393,20 +193,6 @@ public class FuPlayer implements IPlayer {
     public boolean isLooping() {
         return false;
     }
-
-//    @Override
-//    public int getState() {
-//        if (isPlayerAvailable())
-//            return mPlayer.getState();
-//        return 0;
-//    }
-
-
-//    @Override
-//    public void start(int msc) {
-//        internalPlayerStart(msc);
-//    }
-
 
     @Override
     public void resume() {
@@ -423,15 +209,10 @@ public class FuPlayer implements IPlayer {
         mPlayer.release();
     }
 
-//    @Override
-//    public void resume() {
-//        if (isPlayerAvailable())
-//            mPlayer.resume();
-//    }
 
     @Override
     public void seekTo(long msc) {
-        if (isPlayerAvailable())
-            mPlayer.seekTo(msc);
+
+        mPlayer.seekTo(msc);
     }
 }
