@@ -2,6 +2,7 @@ package com.chengfu.fuplayer.ui;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.os.SystemClock;
 import android.support.v4.view.GestureDetectorCompat;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
@@ -48,6 +49,9 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
     private boolean mAttachedToWindow;
     private boolean mShouldShowing;
     private boolean mShowing;
+
+    private int mShowTimeoutMs;
+    private long mHideAtMs;
 
     //Top
     private LinearLayout llTopContainer;
@@ -139,28 +143,23 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
             return;
         }
         if (!mShowing) {
-            updtatProgress();
+            setVisibility(View.VISIBLE);
             mShowing = true;
+            updateAll();
         }
-        updatePlayPauseButton();
 
-        // cause the progress bar to be updated even if mShowing
-        // was already true.  This happens, for example, if we're
-        // paused with the progress bar showing the user hits play.
-        post(mShowProgress);
-
-        llTopContainer.setVisibility(View.VISIBLE);
-        mImgBtnPlayPause.setVisibility(View.VISIBLE);
-        llBottomContainer.setVisibility(View.VISIBLE);
-        mShowing = true;
+        hideAfterTimeout();
     }
 
     @Override
     public void hide() {
-        llTopContainer.setVisibility(View.GONE);
-        mImgBtnPlayPause.setVisibility(View.GONE);
-        llBottomContainer.setVisibility(View.GONE);
-        mShowing = false;
+        if (mShowing) {
+            setVisibility(View.GONE);
+            mShowing = false;
+            removeCallbacks(mShowProgress);
+            removeCallbacks(mFadeOut);
+            mHideAtMs = -1;
+        }
     }
 
     @Override
@@ -171,11 +170,6 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
     @Override
     public void setControllerEnabled(boolean enabled) {
 
-    }
-
-    @Override
-    public boolean isShowing() {
-        return true;
     }
 
     public DefaultControlView(Context context) {
@@ -232,7 +226,7 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
         mFormatBuilder = new StringBuilder();
         mFormatter = new Formatter(mFormatBuilder, Locale.getDefault());
 
-        hide();
+        setVisibility(View.GONE);
     }
 
     @Override
@@ -290,6 +284,11 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
         updateAll();
     }
 
+    @Override
+    public boolean isShowing() {
+        return mShowing;
+    }
+
     private boolean isInShowState() {
         if (mPlayer == null || !mAttachedToWindow) {
             return false;
@@ -310,13 +309,25 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
         }
     }
 
+    private void hideAfterTimeout() {
+        removeCallbacks(mFadeOut);
+        if (mShowTimeoutMs > 0) {
+            mHideAtMs = SystemClock.uptimeMillis() + mShowTimeoutMs;
+            if (mAttachedToWindow) {
+                postDelayed(mFadeOut, mShowTimeoutMs);
+            }
+        } else {
+            mHideAtMs = -1;
+        }
+    }
+
     private void updateAll() {
         updatePlayPauseButton();
         updtatProgress();
     }
 
     private void updatePlayPauseButton() {
-        if (!isShowing() || !mAttachedToWindow) {
+        if (!isShowing()) {
             return;
         }
         boolean requestPlayPauseFocus = false;
@@ -328,15 +339,15 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
             } else {
                 mImgBtnPlayPause.setImageResource(R.drawable.ic_default_controller_play);
             }
-        }
-        if (requestPlayPauseFocus) {
-            requestPlayPauseFocus();
+            if (requestPlayPauseFocus) {
+                mImgBtnPlayPause.requestFocus();
+            }
         }
     }
 
     private void updtatProgress() {
-        if (mPlayer == null || !isShowing() || !mAttachedToWindow) {
-            return ;
+        if (!isShowing()) {
+            return;
         }
 
         long position = mPlayer.getCurrentPosition();
@@ -352,20 +363,12 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
             seekBar.setSecondaryProgress(bufferedPercent * 10);
         }
 
-//        postDelayed(mUpdateProgressAction, 1000);
-
         if (tvEndTime != null)
             tvEndTime.setText(stringForTime(duration));
         if (tvCurrentTime != null)
             tvCurrentTime.setText(stringForTime(position));
         removeCallbacks(mShowProgress);
         postDelayed(mShowProgress, 1000);
-    }
-
-    private void requestPlayPauseFocus() {
-        if (mImgBtnPlayPause != null) {
-            mImgBtnPlayPause.requestFocus();
-        }
     }
 
     private String stringForTime(long timeMs) {
@@ -398,81 +401,81 @@ public class DefaultControlView extends RelativeLayout implements IPlayerControl
     }
 
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-//        mGestureDetector.onTouchEvent(event);
-        int action = event.getActionMasked();
-        if (action == MotionEvent.ACTION_DOWN) {
-            if (mPlayer != null) {
-                mCurrentPosition = mPlayer.getCurrentPosition();
-            }
-        }
-        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-            toggleController();
-            mAdjustType = AdjustType.None;
-//            lvVolumeRoot.setVisibility(View.GONE);
-//            lvProgressRoot.setVisibility(View.GONE);
-//            lvBrightnessRoot.setVisibility(View.GONE);
-            if (mForward) {
-//                int percent = (int) (mDistanceX / getMeasuredWidth() * 1000) * -1 / 4;
-//                long duration = mPlayer.getDuration();
-//                long newposition = (duration * percent) / 1000 + mCurrentPosition;
-//                mPlayer.seekTo(newposition);
-//                mDistanceX = 0;
-//                mForward = false;
-            }
-        }
-        return true;
-    }
+//    @Override
+//    public boolean onTouchEvent(MotionEvent event) {
+////        mGestureDetector.onTouchEvent(event);
+//        int action = event.getActionMasked();
+//        if (action == MotionEvent.ACTION_DOWN) {
+//            if (mPlayer != null) {
+//                mCurrentPosition = mPlayer.getCurrentPosition();
+//            }
+//        }
+//        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+////            toggleController();
+//            mAdjustType = AdjustType.None;
+////            lvVolumeRoot.setVisibility(View.GONE);
+////            lvProgressRoot.setVisibility(View.GONE);
+////            lvBrightnessRoot.setVisibility(View.GONE);
+//            if (mForward) {
+////                int percent = (int) (mDistanceX / getMeasuredWidth() * 1000) * -1 / 4;
+////                long duration = mPlayer.getDuration();
+////                long newposition = (duration * percent) / 1000 + mCurrentPosition;
+////                mPlayer.seekTo(newposition);
+////                mDistanceX = 0;
+////                mForward = false;
+//            }
+//        }
+//        return true;
+//    }
 
-    @Override
-    public boolean onTrackballEvent(MotionEvent ev) {
-        show(sDefaultTimeout);
-        return false;
-    }
+//    @Override
+//    public boolean onTrackballEvent(MotionEvent ev) {
+//        show(sDefaultTimeout);
+//        return false;
+//    }
 
-    @Override
-    public boolean dispatchKeyEvent(KeyEvent event) {
-        int keyCode = event.getKeyCode();
-        final boolean uniqueDown = event.getRepeatCount() == 0 && event.getAction() == KeyEvent.ACTION_DOWN;
-        if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
-                || keyCode == KeyEvent.KEYCODE_SPACE) {
-            if (uniqueDown) {
-//                doPauseResume();
-                show(sDefaultTimeout);
-                if (mImgBtnPlayPause != null) {
-                    mImgBtnPlayPause.requestFocus();
-                }
-            }
-            return true;
-        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
-            if (uniqueDown && !mPlayer.isPlaying()) {
-//                mPlayer.start();
-//                updatePausePlay();
-                show(sDefaultTimeout);
-            }
-            return true;
-        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_STOP || keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
-            if (uniqueDown && mPlayer.isPlaying()) {
-//                mPlayer.pause();
-//                updatePausePlay();
-                show(sDefaultTimeout);
-            }
-            return true;
-        } else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP
-                || keyCode == KeyEvent.KEYCODE_VOLUME_MUTE || keyCode == KeyEvent.KEYCODE_CAMERA) {
-            // don't show the controls for volume adjustment
-            return super.dispatchKeyEvent(event);
-        } else if (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_MENU) {
-            if (uniqueDown) {
-                hide();
-            }
-            return true;
-        }
-
-        show(sDefaultTimeout);
-        return super.dispatchKeyEvent(event);
-    }
+//    @Override
+//    public boolean dispatchKeyEvent(KeyEvent event) {
+//        int keyCode = event.getKeyCode();
+//        final boolean uniqueDown = event.getRepeatCount() == 0 && event.getAction() == KeyEvent.ACTION_DOWN;
+//        if (keyCode == KeyEvent.KEYCODE_HEADSETHOOK || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
+//                || keyCode == KeyEvent.KEYCODE_SPACE) {
+//            if (uniqueDown) {
+////                doPauseResume();
+//                show(sDefaultTimeout);
+//                if (mImgBtnPlayPause != null) {
+//                    mImgBtnPlayPause.requestFocus();
+//                }
+//            }
+//            return true;
+//        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_PLAY) {
+//            if (uniqueDown && !mPlayer.isPlaying()) {
+////                mPlayer.start();
+////                updatePausePlay();
+//                show(sDefaultTimeout);
+//            }
+//            return true;
+//        } else if (keyCode == KeyEvent.KEYCODE_MEDIA_STOP || keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE) {
+//            if (uniqueDown && mPlayer.isPlaying()) {
+////                mPlayer.pause();
+////                updatePausePlay();
+//                show(sDefaultTimeout);
+//            }
+//            return true;
+//        } else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP
+//                || keyCode == KeyEvent.KEYCODE_VOLUME_MUTE || keyCode == KeyEvent.KEYCODE_CAMERA) {
+//            // don't show the controls for volume adjustment
+//            return super.dispatchKeyEvent(event);
+//        } else if (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_MENU) {
+//            if (uniqueDown) {
+//                hide();
+//            }
+//            return true;
+//        }
+//
+//        show(sDefaultTimeout);
+//        return super.dispatchKeyEvent(event);
+//    }
 
 
     @Override

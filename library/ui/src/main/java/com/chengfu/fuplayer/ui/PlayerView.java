@@ -8,11 +8,14 @@ import android.graphics.RectF;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.VideoView;
 
 import com.chengfu.fuplayer.FuLog;
 import com.chengfu.fuplayer.player.IPlayer;
@@ -85,6 +88,12 @@ public class PlayerView extends FrameLayout implements IPlayerView {
             }
         }
         LayoutInflater.from(context).inflate(R.layout.default_player_view, this);
+
+        setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
+
+        setFocusable(true);
+        setFocusableInTouchMode(true);
+        requestFocus();
 
         mSurfaceContainer = findViewById(R.id.surface_container);
         mShutterView = findViewById(R.id.view_shutter);
@@ -190,7 +199,9 @@ public class PlayerView extends FrameLayout implements IPlayerView {
             }
         }
         mPlayer = player;
-
+        if (mControllerView != null) {
+            mControllerView.setPlayer(player);
+        }
         if (player != null) {
             IPlayer.VideoComponent newVideoComponent = player.getVideoComponent();
             if (newVideoComponent != null) {
@@ -250,6 +261,17 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         return mControllerView;
     }
 
+    private void toggleControllerView() {
+        if (mControllerView == null) {
+            return;
+        }
+        if (mControllerView.isShowing()) {
+            mControllerView.hide();
+        } else {
+            mControllerView.show();
+        }
+    }
+
     /**
      * Applies a texture rotation to a {@link TextureView}.
      */
@@ -277,6 +299,52 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         }
     }
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (event.getActionMasked() == MotionEvent.ACTION_UP || event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+            toggleControllerView();
+        }
+        return super.onTouchEvent(event);
+    }
+
+    @Override
+    public boolean onTrackballEvent(MotionEvent event) {
+        if (event.getActionMasked() == MotionEvent.ACTION_UP || event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+            toggleControllerView();
+        }
+        return super.onTrackballEvent(event);
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+//        System.out.println("dispatchKeyEvent event="+event.toString());
+        boolean isDpadWhenControlHidden =
+                isDpadKey(event.getKeyCode()) && mControllerView != null && !mControllerView.isShowing();
+        if (!mControllerView.isShowing()) {
+            mControllerView.show();
+        }
+
+        return super.dispatchKeyEvent(event);
+//        return isDpadWhenControlHidden || dispatchMediaKeyEvent(event) || super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        System.out.println("onKeyDown event=" + event.toString());
+        return super.onKeyDown(keyCode, event);
+    }
+
+    private boolean isDpadKey(int keyCode) {
+        return keyCode == KeyEvent.KEYCODE_DPAD_UP
+                || keyCode == KeyEvent.KEYCODE_DPAD_UP_RIGHT
+                || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT
+                || keyCode == KeyEvent.KEYCODE_DPAD_DOWN_RIGHT
+                || keyCode == KeyEvent.KEYCODE_DPAD_DOWN
+                || keyCode == KeyEvent.KEYCODE_DPAD_DOWN_LEFT
+                || keyCode == KeyEvent.KEYCODE_DPAD_LEFT
+                || keyCode == KeyEvent.KEYCODE_DPAD_UP_LEFT
+                || keyCode == KeyEvent.KEYCODE_DPAD_CENTER;
+    }
 
     private final class ComponentListener extends IPlayer.DefaultEventListener implements VideoListener, TextOutput, OnLayoutChangeListener {
 

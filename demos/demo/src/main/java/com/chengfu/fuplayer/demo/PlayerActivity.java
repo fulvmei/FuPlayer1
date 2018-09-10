@@ -86,10 +86,12 @@ public class PlayerActivity extends AppCompatActivity {
         spinnerMode = findViewById(R.id.spinner_mode);
         spinnerSurfcae = findViewById(R.id.spinner_surfcae);
 
+        mPlayerView1.setControllerView(mControlView1);
         mPlayerView1.addStateView(new DefaultLoadingView(this));
         mPlayerView1.addStateView(new DefaultEndedView(this));
         mPlayerView1.addStateView(new DefaultErrorView(this));
 
+        mPlayerView2.setControllerView(mControlView2);
         mPlayerView2.addStateView(new DefaultLoadingView(this));
         mPlayerView2.addStateView(new DefaultEndedView(this));
         mPlayerView2.addStateView(new DefaultErrorView(this));
@@ -107,7 +109,6 @@ public class PlayerActivity extends AppCompatActivity {
         int currentPlayerView = sp.getInt("currentPlayerView", 0);
         int currentMode = sp.getInt("currentMode", 0);
         int currentSurface = sp.getInt("currentSurface", 0);
-
 
         mFuPlayer = new FuPlayer();
         setPlayer(currentPlayer);
@@ -221,11 +222,11 @@ public class PlayerActivity extends AppCompatActivity {
         switch (index) {
             case 0:
                 mFuPlayer.setPlayerView(mPlayerView1);
-                mFuPlayer.setPlayerController(mControlView1);
+//                mFuPlayer.setPlayerController(mControlView1);
                 break;
             case 1:
                 mFuPlayer.setPlayerView(mPlayerView2);
-                mFuPlayer.setPlayerController(mControlView2);
+//                mFuPlayer.setPlayerController(mControlView2);
                 break;
         }
     }
