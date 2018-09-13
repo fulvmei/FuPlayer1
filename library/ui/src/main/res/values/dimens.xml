@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-
-    <dimen name="default_controller_play_pause_btn_size_portrait">45dp</dimen>
-    <dimen name="default_controller_play_pause_btn_size_landscape">60dp</dimen>
-
-</resources>

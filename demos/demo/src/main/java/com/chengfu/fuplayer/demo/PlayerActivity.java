@@ -86,17 +86,27 @@ public class PlayerActivity extends AppCompatActivity {
         spinnerMode = findViewById(R.id.spinner_mode);
         spinnerSurfcae = findViewById(R.id.spinner_surfcae);
 
-        mPlayerView1.setControllerView(mControlView1);
+//        mPlayerView1.setControllerView(mControlView1);
         mPlayerView1.addStateView(new DefaultLoadingView(this));
         mPlayerView1.addStateView(new DefaultEndedView(this));
         mPlayerView1.addStateView(new DefaultErrorView(this));
 
-        mPlayerView2.setControllerView(mControlView2);
+//        mPlayerView2.setControllerView(mControlView2);
         mPlayerView2.addStateView(new DefaultLoadingView(this));
         mPlayerView2.addStateView(new DefaultEndedView(this));
         mPlayerView2.addStateView(new DefaultErrorView(this));
 
+
+        mControlView1.setTitleEnabled(true);
+        mControlView1.setAnimEnabled(true);
+
+        mControlView2.setTitleEnabled(true);
+        mControlView2.setAnimEnabled(true);
+
         media = (Media) getIntent().getSerializableExtra("media");
+
+//        mControlView1.setTitle(media.getName());
+//        mControlView2.setTitle(media.getName());
 
         initPlayer();
 
@@ -222,11 +232,11 @@ public class PlayerActivity extends AppCompatActivity {
         switch (index) {
             case 0:
                 mFuPlayer.setPlayerView(mPlayerView1);
-//                mFuPlayer.setPlayerController(mControlView1);
+                mFuPlayer.setPlayerController(mControlView1);
                 break;
             case 1:
                 mFuPlayer.setPlayerView(mPlayerView2);
-//                mFuPlayer.setPlayerController(mControlView2);
+                mFuPlayer.setPlayerController(mControlView2);
                 break;
         }
     }

@@ -2,6 +2,7 @@ include ':demos:demo'
 include ':demos:demo-exo'
 include ':demos:demo-sys'
 include ':demos:demo-qiniu'
+include ':demos:demo-timebar'
 
 include ':library:core'
 include ':library:ui'
