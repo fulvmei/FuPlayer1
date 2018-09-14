@@ -97,12 +97,6 @@ public class PlayerActivity extends AppCompatActivity {
         mPlayerView2.addStateView(new DefaultErrorView(this));
 
 
-        mControlView1.setTitleEnabled(true);
-        mControlView1.setAnimEnabled(true);
-
-        mControlView2.setTitleEnabled(true);
-        mControlView2.setAnimEnabled(true);
-
         media = (Media) getIntent().getSerializableExtra("media");
 
 //        mControlView1.setTitle(media.getName());

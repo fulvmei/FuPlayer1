@@ -32,9 +32,13 @@
 
     <declare-styleable name="PlayerControlView">
         <attr name="controller_layout_id" format="reference" />
-        <attr name="show_timeout" format="integer" />
         <attr name="rewind_increment" format="integer" />
         <attr name="fast_forward_increment" format="integer" />
+        <attr name="show_timeout" format="integer" />
+        <attr name="progress_update_interval" format="integer" />
+        <attr name="seek_number" format="integer" />
+        <attr name="show_in_buffering" format="boolean" />
+        <attr name="show_in_ended" format="boolean" />
     </declare-styleable>
 
     <declare-styleable name="DefaultTimeBar">

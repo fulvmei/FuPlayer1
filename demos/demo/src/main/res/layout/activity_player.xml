@@ -23,7 +23,9 @@
         <com.chengfu.fuplayer.ui.DefaultControlView
             android:id="@+id/controlView1"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            app:show_in_buffering="true"
+            app:show_in_ended="true" />
 
     </FrameLayout>
 

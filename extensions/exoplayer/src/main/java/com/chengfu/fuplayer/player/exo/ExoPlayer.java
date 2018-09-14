@@ -229,6 +229,9 @@ public class ExoPlayer extends AbsPlayer {
     @Override
     public void setPlayWhenReady(boolean playWhenReady) {
         if (mMediaPlayer != null) {
+            if (mCurrentState == STATE_ENDED) {
+                mMediaPlayer.seekTo(0);
+            }
             mMediaPlayer.setPlayWhenReady(playWhenReady);
         }
         mPlayWhenReady = playWhenReady;
@@ -285,7 +288,7 @@ public class ExoPlayer extends AbsPlayer {
     @Override
     public long getCurrentPosition() {
         if (mMediaPlayer != null) {
-            mMediaPlayer.getCurrentPosition();
+            return mMediaPlayer.getCurrentPosition();
         }
         return 0;
     }
@@ -293,7 +296,7 @@ public class ExoPlayer extends AbsPlayer {
     @Override
     public long getDuration() {
         if (mMediaPlayer != null) {
-            mMediaPlayer.getDuration();
+            return mMediaPlayer.getDuration();
         }
         return 0;
     }
@@ -301,7 +304,7 @@ public class ExoPlayer extends AbsPlayer {
     @Override
     public boolean isPlaying() {
         if (mMediaPlayer != null) {
-            return isInPlaybackState() && mMediaPlayer.getPlayWhenReady();
+            return isInPlaybackState() && mCurrentState != STATE_ENDED && mMediaPlayer.getPlayWhenReady();
         }
         return false;
     }
@@ -370,6 +373,14 @@ public class ExoPlayer extends AbsPlayer {
         @Override
         public void onTimelineChanged(Timeline timeline, @Nullable Object manifest, int reason) {
             FuLog.d(TAG, "onTimelineChanged...");
+            boolean haveNonEmptyTimeline = timeline != null && !timeline.isEmpty();
+            if (haveNonEmptyTimeline && !mMediaPlayer.isPlayingAd()) {
+                int windowIndex = mMediaPlayer.getCurrentWindowIndex();
+                Timeline.Window window = new Timeline.Window();
+                timeline.getWindow(windowIndex, window);
+                mSeekable = window.isSeekable;
+            }
+            submitSeekableChanged(mSeekable);
         }
 
         @Override
@@ -388,6 +399,7 @@ public class ExoPlayer extends AbsPlayer {
 
         @Override
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+            FuLog.d(TAG, "onPlayerStateChanged : playWhenReady=" + playWhenReady + ", playbackState = " + playbackState);
             if (playbackState == Player.STATE_IDLE) {
                 setPlayerState(playWhenReady, STATE_IDLE);
             } else if (playbackState == Player.STATE_BUFFERING) {
@@ -445,7 +457,7 @@ public class ExoPlayer extends AbsPlayer {
 
         @Override
         public void onSeekProcessed() {
-
+            submitSeekComplete();
         }
     };
 }

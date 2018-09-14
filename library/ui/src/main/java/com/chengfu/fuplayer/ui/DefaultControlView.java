@@ -19,6 +19,7 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.VideoView;
 
 import com.chengfu.fuplayer.player.IPlayer;
 import com.chengfu.fuplayer.widget.IPlayerControllerView;
@@ -41,12 +42,13 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
      */
     public static final int DEFAULT_SHOW_TIMEOUT_MS = 5000;
     /**
-     * The default repeat toggle modes.
+     * The default progress updata interval, in milliseconds.
      */
-
-    private static final int sDefaultTimeout = 4500;
-    private static final int FADE_OUT = 1;
-    private static final int SHOW_PROGRESS = 2;
+    public static final int DEFAULT_PROGRESS_UPDATE_INTERVAL_MS = 1000;
+    /**
+     * The default seek number.
+     */
+    public static final int DEFAULT_SEEK_NUMBER = 1000;
 
     private final Context mContext;
     private IPlayer mPlayer;
@@ -60,64 +62,40 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
     private View mPauseView;
     private View mRewindView;
     private View mFastForwardView;
-    private View mDurationView;
-    private View mPositionView;
+    private TextView mDurationView;
+    private TextView mPositionView;
     private SeekBar mSeekView;
-
 
     private int mRewindMs;
     private int mFastForwardMs;
     private int mShowTimeoutMs;
-
-
-    private boolean mAttachedToWindow;
-    private boolean mShowing;
-    private boolean mAniming;
-    private boolean mAnimEnabled;
-
-    private long mHideAtMs;
-
-
-    private boolean mTracking;
-    private StringBuilder mFormatBuilder;
-    private Formatter mFormatter;
-    private boolean isFullScreen;
-    private boolean mEnabled = false;
-    private boolean mTitleEnabled = false;
-    //    private boolean mShowProgress = true;
-    private boolean mEnabledGesture = true;
-
-    private AdjustType mAdjustType = AdjustType.None;
-    private boolean mForward;
-    private float mDistanceX;
-    private long mCurrentPosition;
-    private float mCurrentVolume;
-    private boolean mCloseVolume;
-
-    private long mSeekbarPosition;
-
+    private int mProgressUpdateIntervalMs;
+    private int mSeekNumber;
     private boolean mShowInBuffering;
     private boolean mShowInEnded;
 
-    private CustomProgress mCustomProgress;
+    private boolean mAttachedToWindow;
+    private boolean mShowing;
+    private long mHideAtMs;
+    private boolean mTracking;
 
-    private final Runnable mFadeOut = new Runnable() {
+    private StringBuilder mFormatBuilder;
+    private Formatter mFormatter;
+
+
+    private final Runnable mHideAction = new Runnable() {
         @Override
         public void run() {
             hide();
         }
     };
 
-    private final Runnable mShowProgress = new Runnable() {
+    private final Runnable mUpdateProgressAction = new Runnable() {
         @Override
         public void run() {
-            updtatProgress();
+            updateProgress();
         }
     };
-
-    private static enum AdjustType {
-        None, Volume, Brightness, FastBackwardOrForward,
-    }
 
     public DefaultControlView(Context context) {
         this(context, null);
@@ -137,17 +115,25 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
         mRewindMs = DEFAULT_REWIND_MS;
         mFastForwardMs = DEFAULT_FAST_FORWARD_MS;
         mShowTimeoutMs = DEFAULT_SHOW_TIMEOUT_MS;
+        mProgressUpdateIntervalMs = DEFAULT_PROGRESS_UPDATE_INTERVAL_MS;
+        mSeekNumber = DEFAULT_SEEK_NUMBER;
+        mShowInBuffering = false;
+        mShowInEnded = false;
+
 
         if (attrs != null) {
             TypedArray a = context.getTheme().obtainStyledAttributes(attrs, R.styleable.PlayerControlView, 0, 0);
             try {
+                controllerLayoutId =
+                        a.getResourceId(R.styleable.PlayerControlView_controller_layout_id, controllerLayoutId);
                 mRewindMs = a.getInt(R.styleable.PlayerControlView_rewind_increment, DEFAULT_REWIND_MS);
                 mFastForwardMs =
                         a.getInt(R.styleable.PlayerControlView_fast_forward_increment, DEFAULT_FAST_FORWARD_MS);
                 mShowTimeoutMs = a.getInt(R.styleable.PlayerControlView_show_timeout, DEFAULT_SHOW_TIMEOUT_MS);
-                controllerLayoutId =
-                        a.getResourceId(R.styleable.PlayerControlView_controller_layout_id, controllerLayoutId);
-
+                mProgressUpdateIntervalMs = a.getInt(R.styleable.PlayerControlView_progress_update_interval, DEFAULT_PROGRESS_UPDATE_INTERVAL_MS);
+                mSeekNumber = a.getInt(R.styleable.PlayerControlView_seek_number, DEFAULT_SEEK_NUMBER);
+                mShowInBuffering = a.getBoolean(R.styleable.PlayerControlView_show_in_buffering, false);
+                mShowInEnded = a.getBoolean(R.styleable.PlayerControlView_show_in_ended, false);
             } finally {
                 a.recycle();
             }
@@ -166,8 +152,8 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
 
     }
 
-    protected int getLayoutResourcesId(int id) {
-        return id;
+    protected int getLayoutResourcesId(int layoutId) {
+        return layoutId;
     }
 
     protected void initView(Context context, AttributeSet attrs, int defStyleAttr) {
@@ -180,6 +166,7 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
         mPositionView = findViewById(R.id.controller_position);
         mSeekView = findViewById(R.id.controller_seek);
         if (mSeekView != null) {
+            mSeekView.setMax(mSeekNumber);
             mSeekView.setOnSeekBarChangeListener(mSeekListener);
         }
         mPlayView = findViewById(R.id.controller_play);
@@ -204,16 +191,16 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
     public void onAttachedToWindow() {
         super.onAttachedToWindow();
         mAttachedToWindow = true;
-//        if (hideAtMs != C.TIME_UNSET) {
-//            long delayMs = hideAtMs - SystemClock.uptimeMillis();
-//            if (delayMs <= 0) {
-//                hide();
-//            } else {
-//                postDelayed(hideAction, delayMs);
-//            }
-//        } else if (isVisible()) {
-//            hideAfterTimeout();
-//        }
+        if (mHideAtMs != -1) {
+            long delayMs = mHideAtMs - SystemClock.uptimeMillis();
+            if (delayMs <= 0) {
+                hide();
+            } else {
+                postDelayed(mHideAction, delayMs);
+            }
+        } else if (isShowing()) {
+            hideAfterTimeout();
+        }
         updateAll();
     }
 
@@ -221,8 +208,8 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
     public void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         mAttachedToWindow = false;
-//        removeCallbacks(updateProgressAction);
-//        removeCallbacks(hideAction);
+        removeCallbacks(mUpdateProgressAction);
+        removeCallbacks(mHideAction);
     }
 
     @Override
@@ -245,9 +232,94 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
         updateAll();
     }
 
+    private void updateAll() {
+        if (!isInShowState()) {
+            hide();
+            return;
+        }
+
+        updatePlayPauseButton();
+        updateNavigation();
+        updateProgress();
+    }
+
+    private void updatePlayPauseButton() {
+        if (!isShowing() || !mAttachedToWindow) {
+            return;
+        }
+        boolean requestPlayPauseFocus = false;
+        boolean playing = isPlaying();
+        if (mPlayView != null) {
+            requestPlayPauseFocus |= playing && mPlayView.isFocused();
+            mPlayView.setVisibility(playing ? View.GONE : View.VISIBLE);
+        }
+        if (mPauseView != null) {
+            requestPlayPauseFocus |= !playing && mPauseView.isFocused();
+            mPauseView.setVisibility(!playing ? View.GONE : View.VISIBLE);
+        }
+        if (requestPlayPauseFocus) {
+            requestPlayPauseFocus();
+        }
+    }
+
+    private void updateNavigation() {
+        if (!isShowing() || !mAttachedToWindow) {
+            return;
+        }
+        boolean isSeekable = mPlayer != null && mPlayer.isSeekable();
+        setViewEnabled(mFastForwardMs > 0 && isSeekable, mFastForwardView);
+        setViewEnabled(mRewindMs > 0 && isSeekable, mRewindView);
+        if (mSeekView != null) {
+            mSeekView.setEnabled(isSeekable);
+        }
+    }
+
+    private void updateProgress() {
+        if (!isShowing() || !mAttachedToWindow) {
+            return;
+        }
+        long position = mPlayer.getCurrentPosition();
+        long duration = mPlayer.getDuration();
+        int bufferedPercent = mPlayer.getBufferPercentage();
+
+        if (mSeekView != null) {
+            if (duration > 0 && !mTracking) {
+                // use long to avoid overflow
+                long pos = mSeekNumber * position / duration;
+                mSeekView.setProgress((int) pos);
+            }
+            mSeekView.setSecondaryProgress(bufferedPercent * 10);
+        }
+
+        if (mDurationView != null)
+            mDurationView.setText(stringForTime(duration));
+        if (mPositionView != null && !mTracking)
+            mPositionView.setText(stringForTime(position));
+        removeCallbacks(mUpdateProgressAction);
+        postDelayed(mUpdateProgressAction, mProgressUpdateIntervalMs);
+    }
+
+    private void requestPlayPauseFocus() {
+        boolean playing = isPlaying();
+        if (!playing && mPlayView != null) {
+            mPlayView.requestFocus();
+        } else if (playing && mPauseView != null) {
+            mPauseView.requestFocus();
+        }
+    }
+
+    private void setViewEnabled(boolean enabled, View view) {
+        if (view == null) {
+            return;
+        }
+        view.setEnabled(enabled);
+        view.setAlpha(enabled ? 1f : 0.3f);
+        view.setVisibility(VISIBLE);
+    }
+
     @Override
     public int getShowTimeoutMs() {
-        return 0;
+        return mShowTimeoutMs;
     }
 
     @Override
@@ -279,101 +351,10 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
         if (mShowing) {
             mShowing = false;
             mContainerView.setVisibility(View.GONE);
-            removeCallbacks(mShowProgress);
-            removeCallbacks(mFadeOut);
+            removeCallbacks(mUpdateProgressAction);
+            removeCallbacks(mHideAction);
             mHideAtMs = -1;
         }
-    }
-
-    public boolean getAnimEnabled() {
-        return mAnimEnabled;
-    }
-
-
-    public void setAnimEnabled(boolean animEnabled) {
-        mAnimEnabled = animEnabled;
-    }
-
-    public boolean getTitleEnabled() {
-        return mTitleEnabled;
-    }
-
-
-    public void setTitleEnabled(boolean titleEnabled) {
-        if (mShowing) {
-            if (titleEnabled) {
-                showTitle(false);
-            } else {
-                hideTitle(false);
-            }
-        }
-        mTitleEnabled = titleEnabled;
-    }
-
-
-    private void showTitle(boolean anim) {
-//        mLlTopContainer.setVisibility(View.VISIBLE);
-//        if (anim) {
-//            mLlTopContainer.clearAnimation();
-//            Animation animation = AnimationUtils.loadAnimation(mContext, R.anim.option_entry_from_top);
-//            animation.setAnimationListener(new ControlAnimationListener(false, null));
-//            mLlTopContainer.startAnimation(animation);
-//        }
-    }
-
-    private void showBottom(boolean anim) {
-//        mLlBottomContainer.setVisibility(View.VISIBLE);
-//        if (anim) {
-//            mLlBottomContainer.clearAnimation();
-//            Animation animation = AnimationUtils.loadAnimation(mContext, R.anim.option_entry_from_bottom);
-//            animation.setAnimationListener(new ControlAnimationListener(false, null));
-//            mLlBottomContainer.startAnimation(animation);
-//        }
-    }
-
-    protected void showOther(boolean anim) {
-
-    }
-
-
-    private void hide(boolean anim) {
-        if (mShowing) {
-            mShowing = false;
-            if (mTitleEnabled) {
-                hideTitle(anim);
-            }
-            hideBottom(anim);
-            removeCallbacks(mShowProgress);
-            removeCallbacks(mFadeOut);
-            mHideAtMs = -1;
-        }
-    }
-
-    private void hideTitle(boolean anim) {
-//        mLlTopContainer.clearAnimation();
-//        if (!anim) {
-//            mLlTopContainer.setVisibility(View.GONE);
-//            return;
-//        } else {
-//            Animation animation = AnimationUtils.loadAnimation(mContext, R.anim.option_leave_from_top);
-//            animation.setAnimationListener(new ControlAnimationListener(true, mLlTopContainer));
-//            mLlTopContainer.startAnimation(animation);
-//        }
-    }
-
-    private void hideBottom(boolean anim) {
-//        mLlBottomContainer.clearAnimation();
-//        if (!anim) {
-//            mLlBottomContainer.setVisibility(View.GONE);
-//        } else {
-//            Animation animation = AnimationUtils.loadAnimation(mContext, R.anim.option_leave_from_bottom);
-//            animation.setAnimationListener(new ControlAnimationListener(true, mLlBottomContainer));
-//            mLlBottomContainer.startAnimation(animation);
-//        }
-    }
-
-    protected void hideOther(boolean anim) {
-
     }
 
     private boolean isInShowState() {
@@ -397,70 +378,15 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
     }
 
     private void hideAfterTimeout() {
-        removeCallbacks(mFadeOut);
+        removeCallbacks(mHideAction);
         if (mShowTimeoutMs > 0) {
             mHideAtMs = SystemClock.uptimeMillis() + mShowTimeoutMs;
             if (mAttachedToWindow) {
-                postDelayed(mFadeOut, mShowTimeoutMs);
+                postDelayed(mHideAction, mShowTimeoutMs);
             }
         } else {
             mHideAtMs = -1;
         }
-    }
-
-    private void updateAll() {
-        if (!isInShowState()) {
-            hide();
-            return;
-        }
-
-        updatePlayPauseButton();
-        updtatProgress();
-    }
-
-    private void updatePlayPauseButton() {
-        if (!isShowing()) {
-            return;
-        }
-        boolean requestPlayPauseFocus = false;
-        boolean playing = isPlaying();
-//        if (mImgBtnPlayPause != null) {
-//            requestPlayPauseFocus |= mImgBtnPlayPause.isFocused();
-//            if (playing) {
-//                mImgBtnPlayPause.setImageResource(R.drawable.ic_default_controller_pause);
-//            } else {
-//                mImgBtnPlayPause.setImageResource(R.drawable.ic_default_controller_play);
-//            }
-//            if (requestPlayPauseFocus) {
-//                mImgBtnPlayPause.requestFocus();
-//            }
-//        }
-    }
-
-    private void updtatProgress() {
-        if (!isShowing()) {
-            return;
-        }
-
-        long position = mPlayer.getCurrentPosition();
-        long duration = mPlayer.getDuration();
-        int bufferedPercent = mPlayer.getBufferPercentage();
-
-//        if (mSeekBar != null) {
-//            if (duration > 0) {
-//                // use long to avoid overflow
-//                long pos = 1000L * position / duration;
-//                mSeekBar.setProgress((int) pos);
-//            }
-//            mSeekBar.setSecondaryProgress(bufferedPercent * 10);
-//        }
-//
-//        if (mTvEndTime != null)
-//            mTvEndTime.setText(stringForTime(duration));
-//        if (mTvCurrentTime != null)
-//            mTvCurrentTime.setText(stringForTime(position));
-//        removeCallbacks(mShowProgress);
-//        postDelayed(mShowProgress, 1000);
     }
 
     private String stringForTime(long timeMs) {
@@ -488,26 +414,6 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         mGestureDetector.onTouchEvent(event);
-        int action = event.getActionMasked();
-        if (action == MotionEvent.ACTION_DOWN) {
-            if (mPlayer != null) {
-                mCurrentPosition = mPlayer.getCurrentPosition();
-            }
-        }
-        if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-            mAdjustType = AdjustType.None;
-//            lvVolumeRoot.setVisibility(View.GONE);
-//            lvProgressRoot.setVisibility(View.GONE);
-//            lvBrightnessRoot.setVisibility(View.GONE);
-            if (mForward) {
-//                int percent = (int) (mDistanceX / getMeasuredWidth() * 1000) * -1 / 4;
-//                long duration = mPlayer.getDuration();
-//                long newposition = (duration * percent) / 1000 + mCurrentPosition;
-//                mPlayer.seekTo(newposition);
-//                mDistanceX = 0;
-//                mForward = false;
-            }
-        }
         return true;
     }
 
@@ -566,17 +472,12 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
         if (mPlayer == null) {
             return;
         }
-//        if (mImgBtnBack == v) {
-//
-//        }
-//        if (mImgBtnPlayPause == v) {
-//            if (mPlayer.getPlayWhenReady()) {
-//                mPlayer.setPlayWhenReady(false);
-//            } else {
-//                mPlayer.setPlayWhenReady(true);
-//            }
-//            updatePlayPauseButton();
-//        }
+        if (mPlayView == v) {
+            mPlayer.setPlayWhenReady(true);
+        } else if (mPauseView == v) {
+            mPlayer.setPlayWhenReady(false);
+        }
+        hideAfterTimeout();
     }
 
     private final SeekBar.OnSeekBarChangeListener mSeekListener = new SeekBar.OnSeekBarChangeListener() {
@@ -585,30 +486,38 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
 
         @Override
         public void onStartTrackingTouch(SeekBar bar) {
-
-            removeCallbacks(mFadeOut);
-
+            removeCallbacks(mHideAction);
             mTracking = true;
         }
 
         @Override
         public void onProgressChanged(SeekBar bar, int progress, boolean fromuser) {
+            if (!fromuser) {
+                return;
+            }
             this.progress = progress;
+            if (!isInShowState()) {
+                return;
+            }
             long duration = mPlayer.getDuration();
-            long newposition = (duration * progress) / 1000L;
-//            mTvCurrentTime.setText(stringForTime(newposition));
+            long newPosition = (duration * progress) / mSeekNumber;
+            if (mPositionView != null) {
+                mPositionView.setText(stringForTime(newPosition));
+            }
         }
 
         @Override
         public void onStopTrackingTouch(SeekBar bar) {
             mTracking = false;
-
+            if (!isInShowState()) {
+                return;
+            }
             long duration = mPlayer.getDuration();
-            long newposition = (duration * progress) / 1000L;
+            long newPosition = duration * progress / mSeekNumber;
+            mPlayer.seekTo(newPosition);
 
-            updtatProgress();
-            updatePlayPauseButton();
             hideAfterTimeout();
+
         }
     };
 
@@ -621,17 +530,19 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
         }
 
         @Override
+        public void onSeekableChanged(boolean seekable) {
+            updateNavigation();
+        }
+
+        @Override
         public void onBufferingUpdate(int percent) {
-            updtatProgress();
+            updateProgress();
         }
     }
 
     private final class ControlGestureListener extends GestureDetector.SimpleOnGestureListener {
         @Override
         public boolean onSingleTapUp(MotionEvent e) {
-            if (mAniming) {
-                return super.onSingleTapUp(e);
-            }
             if (isShowing()) {
                 hide();
             } else {

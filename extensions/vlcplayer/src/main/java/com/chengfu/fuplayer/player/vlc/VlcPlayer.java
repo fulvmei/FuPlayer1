@@ -50,6 +50,7 @@ public final class VlcPlayer extends AbsPlayer {
         mContext = context;
         mVideoWidth = 0;
         mVideoHeight = 0;
+        mSeekable = true;
         mPlayerError = null;
         mRenderedFirstFrame = false;
         mCurrentBufferPercentage = 0;
@@ -168,9 +169,9 @@ public final class VlcPlayer extends AbsPlayer {
         mMediaSource = mediaSource;
         mVideoWidth = 0;
         mVideoHeight = 0;
+        mSeekable = true;
         mPlayerError = null;
         mRenderedFirstFrame = false;
-        mSeekable = false;
         mSeekWhenPrepared = 0;
         mCurrentBufferPercentage = 0;
         openMedia();
@@ -178,11 +179,11 @@ public final class VlcPlayer extends AbsPlayer {
 
     @Override
     public void setPlayWhenReady(boolean playWhenReady) {
-        if (mPlayWhenReady == playWhenReady) {
-            return;
-        }
         if (isInPlaybackState()) {
             if (playWhenReady) {
+                if (mCurrentState == STATE_ENDED) {
+                    setPlayerState(playWhenReady, STATE_READY);
+                }
                 mMediaPlayer.start();
             } else if (isPlaying()) {
                 mMediaPlayer.pause();
@@ -290,6 +291,7 @@ public final class VlcPlayer extends AbsPlayer {
     public void seekTo(long msec) {
         if (isInPlaybackState()) {
             mMediaPlayer.seekTo((int) msec);
+            setPlayWhenReady(mPlayWhenReady);
             mSeekWhenPrepared = 0;
         } else {
             mSeekWhenPrepared = msec;
@@ -353,7 +355,10 @@ public final class VlcPlayer extends AbsPlayer {
             FuLog.d(TAG, "onPrepared...");
 
             mIsPreparing = false;
-
+            if (getDuration() <= 0) {
+                mSeekable = false;
+                submitSeekableChanged(mSeekable);
+            }
             long seekToPosition = mSeekWhenPrepared;  // mSeekWhenPrepared may be changed after seekTo() call
             if (seekToPosition != 0) {
                 seekTo(seekToPosition);
@@ -401,8 +406,9 @@ public final class VlcPlayer extends AbsPlayer {
                             setPlayerState(mPlayWhenReady, STATE_READY);
                             break;
                         case MediaPlayer.MEDIA_INFO_NOT_SEEKABLE:
-                            mSeekable = false;
                             FuLog.i(TAG, "onInfo : not_seekable");
+                            mSeekable = false;
+                            submitSeekableChanged(mSeekable);
                             break;
                     }
                     return true;

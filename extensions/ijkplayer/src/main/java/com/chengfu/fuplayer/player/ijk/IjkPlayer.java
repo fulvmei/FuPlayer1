@@ -57,6 +57,7 @@ public class IjkPlayer extends AbsPlayer {
         this.mContext = context;
         mVideoWidth = 0;
         mVideoHeight = 0;
+        mSeekable = true;
         mPlayerError = null;
         mRenderedFirstFrame = false;
         mCurrentBufferPercentage = 0;
@@ -130,7 +131,7 @@ public class IjkPlayer extends AbsPlayer {
                     mMediaPlayer.setDataSource(mContext, mMediaSource.getUri());
                 }
             }
-            mIsPreparing=true;
+            mIsPreparing = true;
             mMediaPlayer.prepareAsync();
 
             setPlayerState(mPlayWhenReady, STATE_BUFFERING);
@@ -189,9 +190,9 @@ public class IjkPlayer extends AbsPlayer {
         mMediaSource = mediaSource;
         mVideoWidth = 0;
         mVideoHeight = 0;
+        mSeekable = true;
         mPlayerError = null;
         mRenderedFirstFrame = false;
-        mSeekable = false;
         mSeekWhenPrepared = 0;
         mCurrentBufferPercentage = 0;
         openMedia();
@@ -199,11 +200,11 @@ public class IjkPlayer extends AbsPlayer {
 
     @Override
     public void setPlayWhenReady(boolean playWhenReady) {
-        if (mPlayWhenReady == playWhenReady) {
-            return;
-        }
         if (isInPlaybackState()) {
             if (playWhenReady) {
+                if (mCurrentState == STATE_ENDED) {
+                    setPlayerState(playWhenReady, STATE_READY);
+                }
                 mMediaPlayer.start();
             } else if (isPlaying()) {
                 mMediaPlayer.pause();
@@ -311,6 +312,7 @@ public class IjkPlayer extends AbsPlayer {
     public void seekTo(long msec) {
         if (isInPlaybackState()) {
             mMediaPlayer.seekTo((int) msec);
+            setPlayWhenReady(mPlayWhenReady);
             mSeekWhenPrepared = 0;
         } else {
             mSeekWhenPrepared = msec;
@@ -372,7 +374,11 @@ public class IjkPlayer extends AbsPlayer {
         public void onPrepared(IMediaPlayer mp) {
             FuLog.d(TAG, "onPrepared...");
 
-            mIsPreparing=false;
+            mIsPreparing = false;
+            if (getDuration() <= 0) {
+                mSeekable = false;
+                submitSeekableChanged(mSeekable);
+            }
             long seekToPosition = mSeekWhenPrepared;  // mSeekWhenPrepared may be changed after seekTo() call
             if (seekToPosition != 0) {
                 seekTo(seekToPosition);
@@ -423,8 +429,9 @@ public class IjkPlayer extends AbsPlayer {
                             setPlayerState(mPlayWhenReady, STATE_READY);
                             break;
                         case IjkMediaPlayer.MEDIA_INFO_NOT_SEEKABLE:
-                            mSeekable = false;
                             FuLog.i(TAG, "onInfo : not_seekable");
+                            mSeekable = false;
+                            submitSeekableChanged(mSeekable);
                             break;
                     }
                     return true;

@@ -133,6 +133,12 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
         }
     }
 
+    protected final  void submitSeekableChanged(boolean seekable){
+        for (EventListener listener : mEventListeners) {
+            listener.onSeekableChanged(seekable);
+        }
+    }
+
     protected final void submitBufferingUpdate(int percent) {
         for (EventListener listener : mEventListeners) {
             listener.onBufferingUpdate(percent);

@@ -41,6 +41,9 @@ public class FuPlayer implements IPlayer {
         if (mPlayerView != null) {
             mPlayerView.setPlayer(mPlayer);
         }
+        if (mPlayerController != null) {
+            mPlayerController.setPlayer(mPlayer);
+        }
         mPlayer.seekTo(mCurrentPosition);
         mPlayer.setPlayWhenReady(true);
     }
