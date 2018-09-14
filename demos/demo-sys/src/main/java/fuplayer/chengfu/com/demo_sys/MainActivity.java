@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnPre
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        textureView = findViewById(R.id.textureView);
+//        textureView = findViewById(R.id.textureView);
 
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
