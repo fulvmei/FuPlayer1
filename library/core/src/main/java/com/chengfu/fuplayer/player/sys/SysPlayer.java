@@ -39,12 +39,14 @@ public final class SysPlayer extends AbsPlayer {
     private int mCurrentState = -1;
 
     private long mSeekWhenPrepared;  // recording the seek position while preparing
+    private boolean mIsPreparing;
 
     public SysPlayer(Context context) {
         this(context, null);
     }
 
     public SysPlayer(Context context, SysPlayerOption option) {
+        mSeekable = true;
         mContext = context;
         mVideoWidth = 0;
         mVideoHeight = 0;
@@ -80,9 +82,8 @@ public final class SysPlayer extends AbsPlayer {
 
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
-                mCurrentState == STATE_READY
-                && mCurrentState == STATE_BUFFERING
-                && mCurrentState == STATE_ENDED);
+                mCurrentState != STATE_IDLE
+                && !mIsPreparing);
     }
 
     private void openMedia() {
@@ -105,8 +106,9 @@ public final class SysPlayer extends AbsPlayer {
                     mMediaPlayer.setDataSource(mContext, mMediaSource.getUri());
                 }
             }
+            mIsPreparing = true;
             mMediaPlayer.prepareAsync();
-            setPlayerState(mPlayWhenReady, STATE_PREPARING);
+            setPlayerState(mPlayWhenReady, STATE_BUFFERING);
             FuLog.i(TAG, "Set media source for the player: source=" + mMediaSource.toString());
         } catch (IOException e) {
             e.printStackTrace();
@@ -166,7 +168,7 @@ public final class SysPlayer extends AbsPlayer {
         mVideoHeight = 0;
         mPlayerError = null;
         mRenderedFirstFrame = false;
-        mSeekable = false;
+        mSeekable = true;
         mSeekWhenPrepared = 0;
         mCurrentBufferPercentage = 0;
         openMedia();
@@ -174,11 +176,11 @@ public final class SysPlayer extends AbsPlayer {
 
     @Override
     public void setPlayWhenReady(boolean playWhenReady) {
-        if (mPlayWhenReady == playWhenReady) {
-            return;
-        }
         if (isInPlaybackState()) {
             if (playWhenReady) {
+                if (mCurrentState == STATE_ENDED) {
+                    setPlayerState(playWhenReady, STATE_READY);
+                }
                 mMediaPlayer.start();
             } else if (isPlaying()) {
                 mMediaPlayer.pause();
@@ -286,6 +288,7 @@ public final class SysPlayer extends AbsPlayer {
     public void seekTo(long msec) {
         if (isInPlaybackState()) {
             mMediaPlayer.seekTo((int) msec);
+            setPlayWhenReady(mPlayWhenReady);
             mSeekWhenPrepared = 0;
         } else {
             mSeekWhenPrepared = msec;
@@ -304,6 +307,7 @@ public final class SysPlayer extends AbsPlayer {
             mMediaPlayer.release();
             mMediaPlayer = null;
             mPlayerError = null;
+            mIsPreparing = false;
             setPlayerState(mPlayWhenReady, STATE_IDLE);
         }
     }
@@ -318,6 +322,7 @@ public final class SysPlayer extends AbsPlayer {
             mPlayWhenReady = false;
             mSurface = null;
             mPlayerError = null;
+            mIsPreparing = false;
             setPlayerState(mPlayWhenReady, STATE_IDLE);
         }
     }
@@ -347,6 +352,11 @@ public final class SysPlayer extends AbsPlayer {
     final MediaPlayer.OnPreparedListener mPreparedListener = new MediaPlayer.OnPreparedListener() {
         public void onPrepared(MediaPlayer mp) {
             FuLog.d(TAG, "onPrepared...");
+            mIsPreparing = false;
+            if (getDuration() <= 0) {
+                mSeekable = false;
+                submitSeekableChanged(mSeekable);
+            }
             long seekToPosition = mSeekWhenPrepared;  // mSeekWhenPrepared may be changed after seekTo() call
             if (seekToPosition != 0) {
                 seekTo(seekToPosition);
@@ -395,8 +405,9 @@ public final class SysPlayer extends AbsPlayer {
                             setPlayerState(mPlayWhenReady, STATE_READY);
                             break;
                         case MediaPlayer.MEDIA_INFO_NOT_SEEKABLE:
-                            mSeekable = false;
                             FuLog.i(TAG, "onInfo : not_seekable");
+                            mSeekable = false;
+                            submitSeekableChanged(mSeekable);
                             break;
                     }
                     return true;
@@ -407,6 +418,7 @@ public final class SysPlayer extends AbsPlayer {
         @Override
         public void onSeekComplete(MediaPlayer mp) {
             FuLog.d(TAG, "EVENT_CODE_SEEK_COMPLETE");
+
             submitSeekComplete();
         }
     };

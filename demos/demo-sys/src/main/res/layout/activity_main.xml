@@ -6,30 +6,42 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <fuplayer.chengfu.com.demo_sys.MyView
+        android:id="@+id/myView"
+        android:focusable="true"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:background="@color/colorAccent" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="200dp"
         android:orientation="horizontal">
 
-        <Button
+        <TextView
+            android:padding="8dp"
             android:id="@+id/play"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="play" />
 
-        <Button
+        <TextView
+            android:padding="8dp"
             android:id="@+id/pause"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="pause" />
 
-        <Button
+        <TextView
+            android:padding="8dp"
             android:id="@+id/stop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="stop" />
 
-        <Button
+        <TextView
+            android:padding="8dp"
             android:id="@+id/resume"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -38,7 +50,7 @@
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="400dp"
+        android:layout_height="40dp"
         android:layout_alignParentBottom="true"
         android:background="@color/colorAccent">
 

@@ -8,17 +8,20 @@ import android.graphics.RectF;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.VideoView;
 
 import com.chengfu.fuplayer.FuLog;
-import com.chengfu.fuplayer.PlayerError;
 import com.chengfu.fuplayer.player.IPlayer;
 import com.chengfu.fuplayer.text.TextOutput;
 import com.chengfu.fuplayer.video.VideoListener;
+import com.chengfu.fuplayer.widget.IPlayerControllerView;
 import com.chengfu.fuplayer.widget.IPlayerView;
 
 import java.util.List;
@@ -43,6 +46,7 @@ public class PlayerView extends FrameLayout implements IPlayerView {
     private View mSurfaceView;
     private View mShutterView;
     private final CopyOnWriteArraySet<BaseStateView> mStateViews = new CopyOnWriteArraySet<>();
+//    private IPlayerControllerView mControllerView;
 
     private IPlayer mPlayer;
     private ComponentListener mComponentListener;
@@ -85,10 +89,17 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         }
         LayoutInflater.from(context).inflate(R.layout.default_player_view, this);
 
+        setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
+
+//        setFocusable(true);
+//        setFocusableInTouchMode(true);
+//        requestFocus();
+
         mSurfaceContainer = findViewById(R.id.surface_container);
         mShutterView = findViewById(R.id.view_shutter);
         mShutterView.setBackground(getBackground());
-        mShutterView.setVisibility(View.VISIBLE);
+
+        updtatAllViews();
 
         setSurfaceViewType(surfaceType);
 
@@ -143,6 +154,29 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         return mResizeMode;
     }
 
+    private void updtatShutterView() {
+        if (mPlayer != null && mPlayer.getVideoComponent() != null) {
+            if (mPlayer.getVideoComponent().hasRenderedFirstFrame()) {
+                mShutterView.setVisibility(View.GONE);
+            } else {
+                mShutterView.setVisibility(View.VISIBLE);
+            }
+        } else {
+            mShutterView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void updtatStateViews() {
+        for (BaseStateView stateView : mStateViews) {
+            stateView.setPlayer(mPlayer);
+        }
+    }
+
+    private void updtatAllViews() {
+        updtatShutterView();
+        updtatStateViews();
+    }
+
     @Override
     public void setPlayer(IPlayer player) {
         if (mPlayer == player) {
@@ -165,23 +199,12 @@ public class PlayerView extends FrameLayout implements IPlayerView {
             }
         }
         mPlayer = player;
-        mShutterView.setVisibility(View.VISIBLE);
-
+//        if (mControllerView != null) {
+//            mControllerView.setPlayer(player);
+//        }
         if (player != null) {
-            for (BaseStateView stateView : mStateViews) {
-                if (player.getPlayerError() != null && player.getPlayerState() == IPlayer.STATE_IDLE) {
-                    stateView.onError(player.getPlayerError());
-                }
-                stateView.onStateChanged(player.getPlayWhenReady(), player.getPlayerState());
-            }
-
             IPlayer.VideoComponent newVideoComponent = player.getVideoComponent();
             if (newVideoComponent != null) {
-                if (newVideoComponent.hasRenderedFirstFrame()) {
-                    mShutterView.setVisibility(View.INVISIBLE);
-                } else {
-                    mShutterView.setVisibility(View.VISIBLE);
-                }
                 if (mSurfaceView instanceof TextureView) {
                     newVideoComponent.setVideoTextureView((TextureView) mSurfaceView);
                 } else if (mSurfaceView instanceof SurfaceView) {
@@ -195,6 +218,7 @@ public class PlayerView extends FrameLayout implements IPlayerView {
             }
             player.addEventListener(mComponentListener);
         }
+        updtatAllViews();
     }
 
     @Override
@@ -208,12 +232,7 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         }
         addView(stateView);
         mStateViews.add(stateView);
-        if (mPlayer != null) {
-            if (mPlayer.getPlayerError() != null && mPlayer.getPlayerState() == IPlayer.STATE_IDLE) {
-                stateView.onError(mPlayer.getPlayerError());
-            }
-            stateView.onStateChanged(mPlayer.getPlayWhenReady(), mPlayer.getPlayerState());
-        }
+        stateView.setPlayer(mPlayer);
     }
 
     public void removeStateView(BaseStateView stateView) {
@@ -222,8 +241,39 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         }
         removeView(stateView);
         mStateViews.remove(stateView);
-        stateView.removed();
+        stateView.setPlayer(null);
     }
+
+//    public void setControllerView(IPlayerControllerView controllerView) {
+//        if (mControllerView == controllerView) {
+//            return;
+//        }
+//        if (mControllerView != null) {
+//            mControllerView.setPlayer(null);
+//        }
+//        mControllerView = controllerView;
+//        if (controllerView != null) {
+//            controllerView.setPlayer(mPlayer);
+//        }
+//    }
+//
+//    public IPlayerControllerView getControllerView() {
+//        return mControllerView;
+//    }
+//
+//    private void toggleControllerView() {
+//        System.out.println("666666666666666666");
+//        if (mControllerView == null) {
+//            return;
+//        }
+//        System.out.println("7777777777777777777");
+//        if (mControllerView.isShowing()) {
+//            System.out.println("88888888888888888888");
+//            mControllerView.hide();
+//        } else {
+//            mControllerView.show();
+//        }
+//    }
 
     /**
      * Applies a texture rotation to a {@link TextureView}.
@@ -252,33 +302,48 @@ public class PlayerView extends FrameLayout implements IPlayerView {
         }
     }
 
+//    @Override
+//    public boolean onTouchEvent(MotionEvent event) {
+//        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+//            toggleControllerView();
+//        }
+//        return super.onTouchEvent(event);
+//    }
+//
+//    @Override
+//    public boolean onTrackballEvent(MotionEvent event) {
+//        if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+//            toggleControllerView();
+//        }
+//        return super.onTrackballEvent(event);
+//    }
+//
+//    @Override
+//    public boolean dispatchKeyEvent(KeyEvent event) {
+////        System.out.println("dispatchKeyEvent event="+event.toString());
+//        boolean isDpadWhenControlHidden =
+//                isDpadKey(event.getKeyCode()) && mControllerView != null && !mControllerView.isShowing();
+//        if (!mControllerView.isShowing()) {
+//            mControllerView.show();
+//        }
+//
+//        return super.dispatchKeyEvent(event);
+////        return isDpadWhenControlHidden || dispatchMediaKeyEvent(event) || super.dispatchKeyEvent(event);
+//    }
 
-    private final class ComponentListener implements IPlayer.EventListener, VideoListener, TextOutput, OnLayoutChangeListener {
+//    private boolean isDpadKey(int keyCode) {
+//        return keyCode == KeyEvent.KEYCODE_DPAD_UP
+//                || keyCode == KeyEvent.KEYCODE_DPAD_UP_RIGHT
+//                || keyCode == KeyEvent.KEYCODE_DPAD_RIGHT
+//                || keyCode == KeyEvent.KEYCODE_DPAD_DOWN_RIGHT
+//                || keyCode == KeyEvent.KEYCODE_DPAD_DOWN
+//                || keyCode == KeyEvent.KEYCODE_DPAD_DOWN_LEFT
+//                || keyCode == KeyEvent.KEYCODE_DPAD_LEFT
+//                || keyCode == KeyEvent.KEYCODE_DPAD_UP_LEFT
+//                || keyCode == KeyEvent.KEYCODE_DPAD_CENTER;
+//    }
 
-        @Override
-        public void onStateChanged(boolean playWhenReady, int playbackState) {
-            for (BaseStateView stateView : mStateViews) {
-                stateView.onStateChanged(playWhenReady, playbackState);
-            }
-        }
-
-        @Override
-        public void onBufferingUpdate(int percent) {
-
-        }
-
-
-        @Override
-        public void onSeekComplete() {
-
-        }
-
-        @Override
-        public void onError(PlayerError error) {
-            for (BaseStateView stateView : mStateViews) {
-                stateView.onError(error);
-            }
-        }
+    private final class ComponentListener extends IPlayer.DefaultEventListener implements VideoListener, TextOutput, OnLayoutChangeListener {
 
         @Override
         public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {

@@ -36,31 +36,19 @@ public interface IPlayerControllerView {
     void setShowTimeoutMs(int showTimeoutMs);
 
     /**
+     * Returns whether the PlayerController is currently showing.
+     */
+    boolean isShowing();
+
+    /**
      * Shows the playback controls. If {@link #getShowTimeoutMs()} is positive then the controls will
      * be automatically hidden after this duration of time has elapsed without user input.
      */
     void show();
 
     /**
-     * Shows the playback controls. If {@link #getShowTimeoutMs()} is positive then the controls will
-     * be automatically hidden after this duration of time has elapsed without user input.
-     */
-    void show(int showTimeoutMs);
-
-    /**
      * Hides the controller.
      */
     void hide();
 
-    void hideNow();
-
-    /**
-     * Sets the  {@link IPlayerControllerView} enabled.
-     */
-    void setControllerEnabled(boolean enabled);
-
-    /**
-     * Returns whether the PlayerController is currently showing.
-     */
-    boolean isShowing();
 }

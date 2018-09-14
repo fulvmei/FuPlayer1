@@ -7,7 +7,6 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 
-import com.chengfu.fuplayer.PlayerError;
 import com.chengfu.fuplayer.player.IPlayer;
 
 public class DefaultLoadingView extends BaseStateView {
@@ -28,22 +27,19 @@ public class DefaultLoadingView extends BaseStateView {
         setVisibility(View.GONE);
     }
 
+
     @Override
     public void onStateChanged(boolean playWhenReady, int playbackState) {
-        if (playWhenReady == true && (playbackState == IPlayer.STATE_PREPARING || playbackState == IPlayer.STATE_BUFFERING)) {
+        if (playWhenReady == true && playbackState == IPlayer.STATE_BUFFERING) {
             setVisibility(View.VISIBLE);
         } else {
             setVisibility(View.GONE);
         }
     }
 
-    @Override
-    void onError(PlayerError error) {
-
-    }
 
     @Override
-    void removed() {
+    public void detachPlayer() {
         setVisibility(View.GONE);
     }
 }

@@ -96,6 +96,8 @@ public interface IPlayer {
 
         void onStateChanged(boolean playWhenReady, int playbackState);
 
+        void onSeekableChanged(boolean seekable);
+
         void onBufferingUpdate(int percent);
 
         void onSeekComplete();
@@ -103,8 +105,36 @@ public interface IPlayer {
         void onError(PlayerError playerError);
     }
 
+    abstract class DefaultEventListener implements EventListener {
+
+        @Override
+        public void onStateChanged(boolean playWhenReady, int playbackState) {
+
+        }
+
+        @Override
+        public void onSeekableChanged(boolean seekable) {
+
+        }
+
+        @Override
+        public void onBufferingUpdate(int percent) {
+
+        }
+
+        @Override
+        public void onSeekComplete() {
+
+        }
+
+        @Override
+        public void onError(PlayerError playerError) {
+
+        }
+    }
+
     int STATE_IDLE = 1;
-    int STATE_PREPARING = 2;
+    //    int STATE_PREPARING = 2;
     int STATE_READY = 3;
     int STATE_BUFFERING = 4;
     int STATE_ENDED = 5;

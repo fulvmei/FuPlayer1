@@ -48,6 +48,7 @@ public final class QiNiuPlayer extends AbsPlayer {
     private int mCurrentState = -1;
 
     private long mSeekWhenPrepared;  // recording the seek position while preparing
+    private boolean mIsPreparing;
 
     public QiNiuPlayer(Context context) {
         this(context, null);
@@ -57,6 +58,7 @@ public final class QiNiuPlayer extends AbsPlayer {
         mContext = context;
         mVideoWidth = 0;
         mVideoHeight = 0;
+        mSeekable = true;
         mPlayerError = null;
         mRenderedFirstFrame = false;
         mCurrentBufferPercentage = 0;
@@ -95,9 +97,8 @@ public final class QiNiuPlayer extends AbsPlayer {
 
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
-                mCurrentState == STATE_READY
-                && mCurrentState == STATE_BUFFERING
-                && mCurrentState == STATE_ENDED);
+                mCurrentState != STATE_IDLE
+                && !mIsPreparing);
     }
 
     private void openMedia() {
@@ -111,9 +112,11 @@ public final class QiNiuPlayer extends AbsPlayer {
         try {
             mMediaPlayer = createPlayer();
             mMediaPlayer.setDataSource(mMediaSource.getPath(), mMediaSource.getHeaders());
+
+            mIsPreparing = true;
             mMediaPlayer.prepareAsync();
 
-            setPlayerState(mPlayWhenReady, STATE_PREPARING);
+            setPlayerState(mPlayWhenReady, STATE_BUFFERING);
             FuLog.i(TAG, "Set media source for the player: source=" + mMediaSource.toString());
         } catch (IOException e) {
             e.printStackTrace();
@@ -166,9 +169,9 @@ public final class QiNiuPlayer extends AbsPlayer {
         mMediaSource = mediaSource;
         mVideoWidth = 0;
         mVideoHeight = 0;
+        mSeekable = true;
         mPlayerError = null;
         mRenderedFirstFrame = false;
-        mSeekable = false;
         mSeekWhenPrepared = 0;
         mCurrentBufferPercentage = 0;
         openMedia();
@@ -176,11 +179,11 @@ public final class QiNiuPlayer extends AbsPlayer {
 
     @Override
     public void setPlayWhenReady(boolean playWhenReady) {
-        if (mPlayWhenReady == playWhenReady) {
-            return;
-        }
         if (isInPlaybackState()) {
             if (playWhenReady) {
+                if (mCurrentState == STATE_ENDED) {
+                    setPlayerState(playWhenReady, STATE_READY);
+                }
                 mMediaPlayer.start();
             } else if (isPlaying()) {
                 mMediaPlayer.pause();
@@ -288,6 +291,7 @@ public final class QiNiuPlayer extends AbsPlayer {
     public void seekTo(long msec) {
         if (isInPlaybackState()) {
             mMediaPlayer.seekTo((int) msec);
+            setPlayWhenReady(mPlayWhenReady);
             mSeekWhenPrepared = 0;
         } else {
             mSeekWhenPrepared = msec;
@@ -338,8 +342,13 @@ public final class QiNiuPlayer extends AbsPlayer {
     final PLOnPreparedListener mPreparedListener = new PLOnPreparedListener() {
         @Override
         public void onPrepared(int i) {
-            FuLog.d(TAG, "onPrepared...");
+            FuLog.d(TAG, "onPrepared..." + mMediaPlayer.getDuration());
 
+            mIsPreparing = false;
+            if (getDuration() <= 0) {
+                mSeekable = false;
+                submitSeekableChanged(mSeekable);
+            }
             long seekToPosition = mSeekWhenPrepared;  // mSeekWhenPrepared may be changed after seekTo() call
             if (seekToPosition != 0) {
                 seekTo(seekToPosition);
@@ -373,7 +382,6 @@ public final class QiNiuPlayer extends AbsPlayer {
     final PLOnInfoListener mInfoListener =
             new PLOnInfoListener() {
                 public void onInfo(int what, int extra) {
-                    FuLog.i(TAG, "onInfo : what=" + what + ",extra=" + extra);
                     switch (what) {
                         case PLOnInfoListener.MEDIA_INFO_VIDEO_RENDERING_START:
                             FuLog.i(TAG, "onInfo : video_rendering_start");
@@ -389,8 +397,10 @@ public final class QiNiuPlayer extends AbsPlayer {
                             setPlayerState(mPlayWhenReady, STATE_READY);
                             break;
                         case PLOnInfoListener.MEDIA_INFO_IS_SEEKING:
-                            mSeekable = false;
                             FuLog.i(TAG, "onInfo : not_seekable");
+                            break;
+                        case PLOnInfoListener.MEDIA_INFO_METADATA:
+                            FuLog.i(TAG, "onInfo : media_info_metadata  " + mMediaPlayer.getMetadata());
                             break;
                     }
                 }
@@ -428,7 +438,7 @@ public final class QiNiuPlayer extends AbsPlayer {
 
         @Override
         public void onVideoFrameAvailable(byte[] bytes, int i, int i1, int i2, int i3, long l) {
-            FuLog.d(TAG, "onVideoFrameAvailable");
+//            FuLog.d(TAG, "onVideoFrameAvailable");
         }
     };
 
@@ -436,7 +446,7 @@ public final class QiNiuPlayer extends AbsPlayer {
 
         @Override
         public void onAudioFrameAvailable(byte[] bytes, int i, int i1, int i2, int i3, long l) {
-            FuLog.d(TAG, "onAudioFrameAvailable");
+//            FuLog.d(TAG, "onAudioFrameAvailable");
         }
     };
 

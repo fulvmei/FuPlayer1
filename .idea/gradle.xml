@@ -13,6 +13,7 @@
             <option value="$PROJECT_DIR$/demos/demo-exo" />
             <option value="$PROJECT_DIR$/demos/demo-qiniu" />
             <option value="$PROJECT_DIR$/demos/demo-sys" />
+            <option value="$PROJECT_DIR$/demos/demo-timebar" />
             <option value="$PROJECT_DIR$/extensions" />
             <option value="$PROJECT_DIR$/extensions/exoplayer" />
             <option value="$PROJECT_DIR$/extensions/ijkplayer" />
