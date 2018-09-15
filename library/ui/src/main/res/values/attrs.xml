@@ -39,6 +39,8 @@
         <attr name="seek_number" format="integer" />
         <attr name="show_in_buffering" format="boolean" />
         <attr name="show_in_ended" format="boolean" />
+        <attr name="show_repeat_switch" format="boolean" />
+        <attr name="show_volume_switch" format="boolean" />
     </declare-styleable>
 
     <declare-styleable name="DefaultTimeBar">

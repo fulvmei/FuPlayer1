@@ -34,13 +34,16 @@ public final class VlcPlayer extends AbsPlayer {
     private int mVideoHeight;
     private boolean mRenderedFirstFrame;
 
-    private boolean mSeekable;
+    private boolean isSeekable;
     private boolean mPlayWhenReady;
 
     private int mCurrentState = -1;
 
     private long mSeekWhenPrepared;  // recording the seek position while preparing
-    private boolean mIsPreparing;
+    private boolean isPreparing;
+    private boolean isBuffering;
+    private boolean isSeeking;
+    private long mSeekPosition;
 
     public VlcPlayer(Context context) {
         this(context, null);
@@ -50,7 +53,6 @@ public final class VlcPlayer extends AbsPlayer {
         mContext = context;
         mVideoWidth = 0;
         mVideoHeight = 0;
-        mSeekable = true;
         mPlayerError = null;
         mRenderedFirstFrame = false;
         mCurrentBufferPercentage = 0;
@@ -86,7 +88,7 @@ public final class VlcPlayer extends AbsPlayer {
     public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
                 mCurrentState != STATE_IDLE
-                && !mIsPreparing);
+                && !isPreparing);
     }
 
     private void openMedia() {
@@ -108,7 +110,7 @@ public final class VlcPlayer extends AbsPlayer {
                     mMediaPlayer.setDataSource(mContext, mMediaSource.getUri());
                 }
             }
-            mIsPreparing = true;
+            isPreparing = true;
             mMediaPlayer.prepareAsync();
 
             setPlayerState(mPlayWhenReady, STATE_BUFFERING);
@@ -129,6 +131,14 @@ public final class VlcPlayer extends AbsPlayer {
         }
     }
 
+    private void setSeekable(boolean seekable) {
+        if (isSeekable == seekable) {
+            return;
+        }
+        isSeekable = seekable;
+        submitSeekableChanged(seekable);
+    }
+
     private void setPlayerState(boolean playWhenReady, int state) {
         if (mPlayWhenReady == playWhenReady && mCurrentState == state) {
             return;
@@ -137,6 +147,7 @@ public final class VlcPlayer extends AbsPlayer {
             mVideoWidth = 0;
             mVideoHeight = 0;
             mRenderedFirstFrame = false;
+            setSeekable(false);
         }
         mPlayWhenReady = playWhenReady;
         mCurrentState = state;
@@ -169,21 +180,23 @@ public final class VlcPlayer extends AbsPlayer {
         mMediaSource = mediaSource;
         mVideoWidth = 0;
         mVideoHeight = 0;
-        mSeekable = true;
+        isSeekable = false;
         mPlayerError = null;
         mRenderedFirstFrame = false;
         mSeekWhenPrepared = 0;
         mCurrentBufferPercentage = 0;
+        isBuffering = false;
+        isSeeking = false;
         openMedia();
     }
 
     @Override
     public void setPlayWhenReady(boolean playWhenReady) {
+        if (mPlayWhenReady == playWhenReady) {
+            return;
+        }
         if (isInPlaybackState()) {
             if (playWhenReady) {
-                if (mCurrentState == STATE_ENDED) {
-                    setPlayerState(playWhenReady, STATE_READY);
-                }
                 mMediaPlayer.start();
             } else if (isPlaying()) {
                 mMediaPlayer.pause();
@@ -206,6 +219,7 @@ public final class VlcPlayer extends AbsPlayer {
             mMediaPlayer.setLooping(looping);
         }
         mLooping = looping;
+        submitLoopingChanged(looping);
     }
 
     @Override
@@ -263,6 +277,9 @@ public final class VlcPlayer extends AbsPlayer {
     @Override
     public long getCurrentPosition() {
         if (isInPlaybackState()) {
+            if (isSeeking) {
+                return mSeekPosition;
+            }
             return mMediaPlayer.getCurrentPosition();
         }
         return 0;
@@ -284,14 +301,27 @@ public final class VlcPlayer extends AbsPlayer {
 
     @Override
     public boolean isSeekable() {
-        return mSeekable;
+        return isSeekable;
     }
 
     @Override
     public void seekTo(long msec) {
         if (isInPlaybackState()) {
-            mMediaPlayer.seekTo((int) msec);
-            setPlayWhenReady(mPlayWhenReady);
+            isSeeking = true;
+            mSeekPosition = msec;
+            if (msec > getDuration()) {
+                mSeekPosition = getDuration();
+            }
+            if (msec < 0) {
+                mSeekPosition = 0;
+            }
+            if (mCurrentState == STATE_ENDED) {
+                if (mPlayWhenReady) {
+                    mMediaPlayer.start();
+                }
+            }
+            setPlayerState(mPlayWhenReady, STATE_BUFFERING);
+            mMediaPlayer.seekTo((int) mSeekPosition);
             mSeekWhenPrepared = 0;
         } else {
             mSeekWhenPrepared = msec;
@@ -310,6 +340,9 @@ public final class VlcPlayer extends AbsPlayer {
             mMediaPlayer.release();
             mMediaPlayer = null;
             mPlayerError = null;
+            isPreparing = false;
+            isBuffering = false;
+            isSeeking = false;
             setPlayerState(mPlayWhenReady, STATE_IDLE);
         }
     }
@@ -354,18 +387,21 @@ public final class VlcPlayer extends AbsPlayer {
         public void onPrepared(MediaPlayer mp) {
             FuLog.d(TAG, "onPrepared...");
 
-            mIsPreparing = false;
-            if (getDuration() <= 0) {
-                mSeekable = false;
-                submitSeekableChanged(mSeekable);
+            isPreparing = false;
+            if (mMediaPlayer != null && mMediaPlayer.getDuration() <= 0) {
+                setSeekable(false);
+            } else {
+                setSeekable(true);
             }
             long seekToPosition = mSeekWhenPrepared;  // mSeekWhenPrepared may be changed after seekTo() call
             if (seekToPosition != 0) {
                 seekTo(seekToPosition);
             }
-            setPlayerState(mPlayWhenReady, STATE_READY);
             if (mPlayWhenReady) {
                 mMediaPlayer.start();
+            }
+            if (!isSeeking && !isBuffering) {
+                setPlayerState(mPlayWhenReady, STATE_READY);
             }
         }
     };
@@ -399,16 +435,19 @@ public final class VlcPlayer extends AbsPlayer {
                             break;
                         case MediaPlayer.MEDIA_INFO_BUFFERING_START:
                             FuLog.i(TAG, "onInfo : buffering_start");
+                            isBuffering = true;
                             setPlayerState(mPlayWhenReady, STATE_BUFFERING);
                             break;
                         case MediaPlayer.MEDIA_INFO_BUFFERING_END:
                             FuLog.i(TAG, "onInfo : buffering_end");
-                            setPlayerState(mPlayWhenReady, STATE_READY);
+                            isBuffering = false;
+                            if (!isSeeking) {
+                                setPlayerState(mPlayWhenReady, STATE_READY);
+                            }
                             break;
                         case MediaPlayer.MEDIA_INFO_NOT_SEEKABLE:
                             FuLog.i(TAG, "onInfo : not_seekable");
-                            mSeekable = false;
-                            submitSeekableChanged(mSeekable);
+                            setSeekable(false);
                             break;
                     }
                     return true;
@@ -419,6 +458,11 @@ public final class VlcPlayer extends AbsPlayer {
         @Override
         public void onSeekComplete(MediaPlayer mp) {
             FuLog.d(TAG, "EVENT_CODE_SEEK_COMPLETE");
+            isSeeking = false;
+            mSeekPosition = 0;
+            if (!isBuffering) {
+                setPlayerState(mPlayWhenReady, STATE_READY);
+            }
             submitSeekComplete();
         }
     };

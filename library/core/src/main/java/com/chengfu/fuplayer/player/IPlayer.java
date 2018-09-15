@@ -98,6 +98,8 @@ public interface IPlayer {
 
         void onSeekableChanged(boolean seekable);
 
+        void onLoopingChanged(boolean isLooping);
+
         void onBufferingUpdate(int percent);
 
         void onSeekComplete();
@@ -118,6 +120,11 @@ public interface IPlayer {
         }
 
         @Override
+        public void onLoopingChanged(boolean isLooping) {
+
+        }
+
+        @Override
         public void onBufferingUpdate(int percent) {
 
         }
@@ -134,12 +141,9 @@ public interface IPlayer {
     }
 
     int STATE_IDLE = 1;
-    //    int STATE_PREPARING = 2;
-    int STATE_READY = 3;
-    int STATE_BUFFERING = 4;
-    int STATE_ENDED = 5;
-//    int STATE_ERROR = 6;
-
+    int STATE_READY = 2;
+    int STATE_BUFFERING = 3;
+    int STATE_ENDED = 4;
 
     VideoComponent getVideoComponent();
 

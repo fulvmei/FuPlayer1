@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merge xmlns:android="http://schemas.android.com/apk/res/android">
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <LinearLayout
         android:id="@id/controller_container"
@@ -17,55 +18,100 @@
             android:orientation="horizontal"
             android:paddingTop="4dp">
 
-            <ImageButton
+            <android.support.v7.widget.AppCompatImageButton
+                android:id="@id/controller_repeat_up"
+                android:layout_width="48dp"
+                android:layout_height="40dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:paddingBottom="4dp"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:paddingTop="4dp"
+                app:srcCompat="@drawable/ic_repeat_up_white_24dp" />
+
+            <android.support.v7.widget.AppCompatImageButton
+                android:id="@id/controller_repeat_off"
+                android:layout_width="48dp"
+                android:layout_height="40dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:paddingBottom="4dp"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:paddingTop="4dp"
+                app:srcCompat="@drawable/ic_repeat_off_white_24dp" />
+
+            <android.support.v7.widget.AppCompatImageButton
                 android:id="@id/controller_rewind"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="48dp"
+                android:layout_height="40dp"
                 android:background="?android:attr/selectableItemBackground"
                 android:paddingBottom="4dp"
                 android:paddingLeft="8dp"
                 android:paddingRight="8dp"
                 android:paddingTop="4dp"
-                android:src="@drawable/ic_default_controller_rewind" />
+                app:srcCompat="@drawable/ic_fast_rewind_white_24dp" />
 
-            <ImageButton
+            <android.support.v7.widget.AppCompatImageButton
                 android:id="@id/controller_play"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="48dp"
+                android:layout_height="40dp"
                 android:background="?android:attr/selectableItemBackground"
                 android:paddingBottom="4dp"
                 android:paddingLeft="8dp"
                 android:paddingRight="8dp"
                 android:paddingTop="4dp"
-                android:src="@drawable/ic_default_controller_play" />
+                app:srcCompat="@drawable/ic_play_white_24dp" />
 
-            <ImageButton
+            <android.support.v7.widget.AppCompatImageButton
                 android:id="@id/controller_pause"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="48dp"
+                android:layout_height="40dp"
                 android:background="?android:attr/selectableItemBackground"
                 android:paddingBottom="4dp"
                 android:paddingLeft="8dp"
                 android:paddingRight="8dp"
                 android:paddingTop="4dp"
-                android:src="@drawable/ic_default_controller_pause" />
+                app:srcCompat="@drawable/ic_pause_white_24dp" />
 
-            <ImageButton
+            <android.support.v7.widget.AppCompatImageButton
                 android:id="@id/controller_fast_forward"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="48dp"
+                android:layout_height="40dp"
                 android:background="?android:attr/selectableItemBackground"
                 android:paddingBottom="4dp"
                 android:paddingLeft="8dp"
                 android:paddingRight="8dp"
                 android:paddingTop="4dp"
-                android:src="@drawable/ic_default_controller_fast_forward" />
+                app:srcCompat="@drawable/ic_fast_forward_white_24dp" />
+
+            <android.support.v7.widget.AppCompatImageButton
+                android:id="@id/controller_volume_up"
+                android:layout_width="48dp"
+                android:layout_height="40dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:paddingBottom="4dp"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:paddingTop="4dp"
+                app:srcCompat="@drawable/ic_volume_up_white_24dp" />
+
+            <android.support.v7.widget.AppCompatImageButton
+                android:id="@id/controller_volume_off"
+                android:layout_width="48dp"
+                android:layout_height="40dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:paddingBottom="4dp"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:paddingTop="4dp"
+                app:srcCompat="@drawable/ic_volume_off_white_24dp" />
 
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
             android:layout_marginTop="4dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">

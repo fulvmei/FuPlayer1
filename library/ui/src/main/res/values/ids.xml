@@ -15,10 +15,14 @@
 <resources>
 
     <item name="controller_container" type="id" />
+    <item name="controller_repeat_up" type="id" />
+    <item name="controller_repeat_off" type="id" />
+    <item name="controller_rewind" type="id" />
     <item name="controller_play" type="id" />
     <item name="controller_pause" type="id" />
-    <item name="controller_rewind" type="id" />
     <item name="controller_fast_forward" type="id" />
+    <item name="controller_volume_up" type="id" />
+    <item name="controller_volume_off" type="id" />
     <item name="controller_duration" type="id" />
     <item name="controller_position" type="id" />
     <item name="controller_seek" type="id" />

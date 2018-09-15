@@ -133,9 +133,15 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
         }
     }
 
-    protected final  void submitSeekableChanged(boolean seekable){
+    protected final void submitSeekableChanged(boolean isSeekable) {
         for (EventListener listener : mEventListeners) {
-            listener.onSeekableChanged(seekable);
+            listener.onSeekableChanged(isSeekable);
+        }
+    }
+
+    protected final void submitLoopingChanged(boolean isLooping) {
+        for (EventListener listener : mEventListeners) {
+            listener.onLoopingChanged(isLooping);
         }
     }
 
@@ -174,7 +180,7 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
 
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
-            FuLog.d(TAG,"surfaceCreated");
+            FuLog.d(TAG, "surfaceCreated");
             setVideoSurface(holder.getSurface());
         }
 
@@ -185,13 +191,13 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
-            FuLog.d(TAG,"surfaceDestroyed");
+            FuLog.d(TAG, "surfaceDestroyed");
             setVideoSurface(null);
         }
 
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
-            FuLog.d(TAG,"onSurfaceTextureAvailable");
+            FuLog.d(TAG, "onSurfaceTextureAvailable");
             setVideoSurface(new Surface(surfaceTexture));
         }
 
@@ -202,7 +208,7 @@ public abstract class AbsPlayer implements IPlayer, IPlayer.VideoComponent, IPla
 
         @Override
         public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-            FuLog.d(TAG,"onSurfaceTextureDestroyed");
+            FuLog.d(TAG, "onSurfaceTextureDestroyed");
             setVideoSurface(null);
             return true;
         }

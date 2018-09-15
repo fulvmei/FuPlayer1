@@ -44,9 +44,7 @@ public class ExoPlayer extends AbsPlayer {
     private final DefaultBandwidthMeter mBandwidthMeter;
 
     private Surface mSurface;
-    private int mAudioSession;
     private boolean mLooping;
-    private float mVolume = 1.0f;
 
     private com.chengfu.fuplayer.MediaSource mMediaSource;
 
@@ -56,9 +54,9 @@ public class ExoPlayer extends AbsPlayer {
     private int mVideoHeight;
     private boolean mRenderedFirstFrame;
 
-    private boolean mSeekable;
+    private boolean isSeekable;
     private boolean mPlayWhenReady;
-//    private boolean mPreparing;
+    private boolean isPreparing;
 
     private int mCurrentState = -1;
 
@@ -148,10 +146,19 @@ public class ExoPlayer extends AbsPlayer {
             mMediaPlayer = createPlayer();
         }
 
+        isPreparing = true;
         mMediaPlayer.prepare(getMediaSource(mMediaSource));
 
         setPlayerState(mPlayWhenReady, STATE_BUFFERING);
         FuLog.w(TAG, "Set media source for the player: source=" + mMediaSource.toString());
+    }
+
+    private void setSeekable(boolean seekable) {
+        if (isSeekable == seekable) {
+            return;
+        }
+        isSeekable = seekable;
+        submitSeekableChanged(seekable);
     }
 
     private void setPlayerState(boolean playWhenReady, int playbackState) {
@@ -162,6 +169,7 @@ public class ExoPlayer extends AbsPlayer {
             mVideoWidth = 0;
             mVideoHeight = 0;
             mRenderedFirstFrame = false;
+            setSeekable(false);
         }
         mPlayWhenReady = playWhenReady;
         mCurrentState = playbackState;
@@ -220,7 +228,7 @@ public class ExoPlayer extends AbsPlayer {
         mVideoHeight = 0;
         mPlayerError = null;
         mRenderedFirstFrame = false;
-        mSeekable = false;
+        isSeekable = false;
         mSeekWhenPrepared = 0;
         mCurrentBufferPercentage = 0;
         openMedia();
@@ -255,6 +263,7 @@ public class ExoPlayer extends AbsPlayer {
             }
         }
         mLooping = looping;
+        submitLoopingChanged(looping);
     }
 
     @Override
@@ -272,7 +281,7 @@ public class ExoPlayer extends AbsPlayer {
     @Override
     public float getVolume() {
         if (mMediaPlayer != null) {
-            mMediaPlayer.getVolume();
+            return  mMediaPlayer.getVolume();
         }
         return 0;
     }
@@ -311,7 +320,7 @@ public class ExoPlayer extends AbsPlayer {
 
     @Override
     public boolean isSeekable() {
-        return mSeekable;
+        return isSeekable;
     }
 
     @Override
@@ -373,14 +382,15 @@ public class ExoPlayer extends AbsPlayer {
         @Override
         public void onTimelineChanged(Timeline timeline, @Nullable Object manifest, int reason) {
             FuLog.d(TAG, "onTimelineChanged...");
+            boolean isSeekable = false;
             boolean haveNonEmptyTimeline = timeline != null && !timeline.isEmpty();
             if (haveNonEmptyTimeline && !mMediaPlayer.isPlayingAd()) {
                 int windowIndex = mMediaPlayer.getCurrentWindowIndex();
                 Timeline.Window window = new Timeline.Window();
                 timeline.getWindow(windowIndex, window);
-                mSeekable = window.isSeekable;
+                isSeekable = window.isSeekable;
             }
-            submitSeekableChanged(mSeekable);
+            setSeekable(isSeekable);
         }
 
         @Override
@@ -401,12 +411,28 @@ public class ExoPlayer extends AbsPlayer {
         public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
             FuLog.d(TAG, "onPlayerStateChanged : playWhenReady=" + playWhenReady + ", playbackState = " + playbackState);
             if (playbackState == Player.STATE_IDLE) {
+                isPreparing = false;
                 setPlayerState(playWhenReady, STATE_IDLE);
             } else if (playbackState == Player.STATE_BUFFERING) {
                 setPlayerState(playWhenReady, STATE_BUFFERING);
             } else if (playbackState == Player.STATE_READY) {
+                if (isPreparing) {
+                    isPreparing = false;
+                    boolean isSeekable = false;
+                    Timeline timeline = mMediaPlayer != null ? mMediaPlayer.getCurrentTimeline() : null;
+                    boolean haveNonEmptyTimeline = timeline != null && !timeline.isEmpty();
+                    if (haveNonEmptyTimeline && !mMediaPlayer.isPlayingAd()) {
+                        int windowIndex = mMediaPlayer.getCurrentWindowIndex();
+                        Timeline.Window window = new Timeline.Window();
+                        timeline.getWindow(windowIndex, window);
+                        isSeekable = window.isSeekable;
+                    }
+                    setSeekable(isSeekable);
+                }
+
                 setPlayerState(playWhenReady, STATE_READY);
             } else if (playbackState == Player.STATE_ENDED) {
+                isPreparing = false;
                 setPlayerState(playWhenReady, STATE_ENDED);
             }
         }
