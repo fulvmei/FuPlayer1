@@ -1,5 +1,6 @@
 package com.chengfu.fuplayer.ui;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.os.SystemClock;
@@ -487,6 +488,50 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
                 && mPlayer.getPlayWhenReady();
     }
 
+    private void playOrPause(boolean play) {
+        if (mPlayer == null) {
+            return;
+        }
+        if (play) {
+            if (mPlayer.getPlayerState() == IPlayer.STATE_ENDED) {
+                mPlayer.seekTo(0);
+            }
+            mPlayer.setPlayWhenReady(true);
+        } else {
+            mPlayer.setPlayWhenReady(false);
+        }
+    }
+
+    private void seekTo(long positionMs) {
+        if (positionMs <= 0 || mPlayer == null) {
+            return;
+        }
+        mPlayer.seekTo(positionMs);
+    }
+
+    private void rewind() {
+        if (mRewindMs <= 0 || mPlayer == null) {
+            return;
+        }
+        if (mPlayer.getCurrentPosition() > 0) {
+            seekTo(Math.max(mPlayer.getCurrentPosition() - mRewindMs, 0));
+        }
+    }
+
+    private void fastForward() {
+        if (mFastForwardMs <= 0 || mPlayer == null) {
+            return;
+        }
+        long durationMs = mPlayer.getDuration();
+        long currentPosition = mPlayer.getCurrentPosition();
+        long seekPositionMs = currentPosition + mFastForwardMs;
+        if (durationMs > 0) {
+            seekPositionMs = Math.min(seekPositionMs, durationMs);
+        }
+        if (currentPosition < durationMs) {
+            seekTo(seekPositionMs);
+        }
+    }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -494,11 +539,56 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
         return true;
     }
 
-//    @Override
-//    public boolean onTrackballEvent(MotionEvent ev) {
-//        show(sDefaultTimeout);
-//        return false;
-//    }
+    @Override
+    public boolean onTrackballEvent(MotionEvent event) {
+        mGestureDetector.onTouchEvent(event);
+        return true;
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        return dispatchMediaKeyEvent(event) || super.dispatchKeyEvent(event);
+    }
+
+    public boolean dispatchMediaKeyEvent(KeyEvent event) {
+        int keyCode = event.getKeyCode();
+        if (mPlayer == null || !isHandledMediaKey(keyCode)) {
+            return false;
+        }
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            if (keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD) {
+                fastForward();
+            } else if (keyCode == KeyEvent.KEYCODE_MEDIA_REWIND) {
+                rewind();
+            } else if (event.getRepeatCount() == 0) {
+                switch (keyCode) {
+                    case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
+                        playOrPause(!mPlayer.getPlayWhenReady());
+                        break;
+                    case KeyEvent.KEYCODE_MEDIA_PLAY:
+                        playOrPause(true);
+                        break;
+                    case KeyEvent.KEYCODE_MEDIA_PAUSE:
+                        playOrPause(false);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        return true;
+    }
+
+    @SuppressLint("InlinedApi")
+    private static boolean isHandledMediaKey(int keyCode) {
+        return keyCode == KeyEvent.KEYCODE_MEDIA_FAST_FORWARD
+                || keyCode == KeyEvent.KEYCODE_MEDIA_REWIND
+                || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
+                || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY
+                || keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE
+                || keyCode == KeyEvent.KEYCODE_MEDIA_NEXT
+                || keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS;
+    }
 
 //    @Override
 //    public boolean dispatchKeyEvent(KeyEvent event) {
@@ -550,18 +640,18 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
             return;
         }
         if (mPlayView == v) {
-            if (mPlayer.getPlayerState() == IPlayer.STATE_ENDED) {
-                mPlayer.seekTo(0);
-            } else {
-                mPlayer.setPlayWhenReady(true);
-            }
+            playOrPause(true);
         } else if (mPauseView == v) {
-            mPlayer.setPlayWhenReady(false);
+            playOrPause(false);
+        } else if (mFastRewindView == v) {
+            rewind();
+        } else if (mFastForwardView == v) {
+            fastForward();
         } else if (mRepeatUpView == v) {
             mPlayer.setLooping(false);
         } else if (mRepeatOffView == v) {
             mPlayer.setLooping(true);
-        }else if (mVolumeUpView == v) {
+        } else if (mVolumeUpView == v) {
             mPlayer.setVolume(0.0f);
             updateVolumeView();
         } else if (mVolumeOffView == v) {
@@ -605,10 +695,9 @@ public class DefaultControlView extends FrameLayout implements IPlayerController
             }
             long duration = mPlayer.getDuration();
             long newPosition = duration * progress / mSeekNumber;
-            mPlayer.seekTo(newPosition);
+            seekTo(newPosition);
 
             hideAfterTimeout();
-
         }
     };
 
