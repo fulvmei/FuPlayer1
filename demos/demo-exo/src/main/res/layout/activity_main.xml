@@ -49,28 +49,28 @@
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/seek"
+            android:id="@+id/path1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="seek" />
+            android:text="path1" />
 
         <Button
-            android:id="@+id/add"
+            android:id="@+id/path2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="add" />
+            android:text="path2" />
 
         <Button
-            android:id="@+id/remove"
+            android:id="@+id/path3"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="remove" />
+            android:text="path3" />
 
         <Button
-            android:id="@+id/test3"
+            android:id="@+id/path4"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="test" />
+            android:text="path4" />
     </LinearLayout>
 
 </LinearLayout>

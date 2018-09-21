@@ -99,12 +99,12 @@
     "media_list": [
       {
         "name": "DesktopLiveStreaming",
-        "path": "http://127.0.0.1/live.flv",
+        "path": "http://10.0.2.2/live.flv",
         "tag": "flv"
       },
       {
         "name": "资源1",
-        "path": "http://nemo.hdllive.ks-cdn.com/live/appdemo_328.flv",
+        "path": "http://flv1948666e.live.126.net/live/3c5170e6cdfa4e758d1ca67f1673b949.flv?netease=flv1948666e.live.126.net",
         "tag": "flv"
       }
     ]

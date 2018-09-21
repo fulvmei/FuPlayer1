@@ -8,6 +8,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 
+import com.chengfu.fuplayer.demo.exo.render.MyRenderersFactory;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlaybackException;
@@ -24,6 +25,7 @@ import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
+import com.google.android.exoplayer2.source.hls.DefaultHlsDataSourceFactory;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
 import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource;
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
@@ -33,14 +35,20 @@ import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 
-public class MainActivity extends AppCompatActivity implements Player.EventListener, View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    String path1 = "https://mov.bn.netease.com/open-movie/nos/mp4/2018/01/12/SD70VQJ74_sd.mp4";
+    String path1 = "rtmp://3891.liveplay.myqcloud.com/live/3891_user_6f8cc72d_5956";
 
-    String path2 = "https://mov.bn.netease.com/open-movie/nos/mp4/2015/08/27/SB13F5AGJ_sd.mp4";
+    String path2 = "http://3891.liveplay.myqcloud.com/live/3891_user_6f8cc72d_5956.flv";
+
+    String path3 = "http://3891.liveplay.myqcloud.com/live/3891_user_6f8cc72d_5956.m3u8";
+
+    String path4 = "rtmp://3891.liveplay.myqcloud.com/live/3891_user_6f8cc72d_5956?bizid=3891&txSecret=8a7461e11b8b6798383a6380b4da4968&txTime=5BA898E0";
+
+    String path = "https://mov.bn.netease.com/open-movie/nos/mp4/2015/08/27/SB13F5AGJ_sd.mp4";
 
     private TextureView textureView;
-    private Button play, pause, stop, release, seek, add, remove;
+    private Button play, pause, stop, release, p1, p2, p3, p4;
 
     private SimpleExoPlayer player;
     private DefaultBandwidthMeter mBandwidthMeter;
@@ -56,23 +64,25 @@ public class MainActivity extends AppCompatActivity implements Player.EventListe
         pause = findViewById(R.id.pause);
         stop = findViewById(R.id.stop);
         release = findViewById(R.id.release);
-        seek = findViewById(R.id.seek);
-        add = findViewById(R.id.add);
-        remove = findViewById(R.id.remove);
+        p1 = findViewById(R.id.path1);
+        p2 = findViewById(R.id.path2);
+        p3 = findViewById(R.id.path3);
+        p4 = findViewById(R.id.path4);
 
         play.setOnClickListener(this);
         pause.setOnClickListener(this);
         stop.setOnClickListener(this);
         release.setOnClickListener(this);
-        seek.setOnClickListener(this);
-        add.setOnClickListener(this);
-        remove.setOnClickListener(this);
+        p1.setOnClickListener(this);
+        p2.setOnClickListener(this);
+        p3.setOnClickListener(this);
+        p4.setOnClickListener(this);
 
         initPlayer();
     }
 
     private void initPlayer() {
-        RenderersFactory renderersFactory = new DefaultRenderersFactory(this);
+        RenderersFactory renderersFactory = new MyRenderersFactory(this);
         DefaultTrackSelector trackSelector =
                 new DefaultTrackSelector();
         player = ExoPlayerFactory.newSimpleInstance(renderersFactory, trackSelector);
@@ -83,7 +93,7 @@ public class MainActivity extends AppCompatActivity implements Player.EventListe
 //        player.addListener(this);
 
         player.setVideoTextureView(textureView);
-        player.prepare(getMediaSource(Uri.parse(path2)));
+        player.prepare(getMediaSource(Uri.parse(path)));
         player.setPlayWhenReady(true);
     }
 
@@ -92,6 +102,13 @@ public class MainActivity extends AppCompatActivity implements Player.EventListe
         DefaultDataSourceFactory dataSourceFactory =
                 new DefaultDataSourceFactory(this,
                         Util.getUserAgent(this, this.getPackageName()), mBandwidthMeter);
+
+
+//        String scheme = uri.getScheme();
+//        if (scheme != null && scheme.contains("rtmp")) {
+//            return new ExtractorMediaSource(uri, new RtmpDataSourceFactory(), new DefaultExtractorsFactory(), null, null);
+//        }
+
         switch (contentType) {
             case C.TYPE_DASH:
                 DefaultDashChunkSource.Factory factory = new DefaultDashChunkSource.Factory(dataSourceFactory);
@@ -116,62 +133,6 @@ public class MainActivity extends AppCompatActivity implements Player.EventListe
         super.onDestroy();
     }
 
-
-    @Override
-    public void onTimelineChanged(Timeline timeline, @Nullable Object manifest, int reason) {
-        System.out.println("onTimelineChanged : timeline=" + timeline + " , manifest=" + manifest);
-    }
-
-    @Override
-    public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
-        System.out.println("onTracksChanged : trackGroups=" + trackGroups + " , trackSelections=" + trackSelections);
-    }
-
-    @Override
-    public void onLoadingChanged(boolean isLoading) {
-        System.out.println("onLoadingChanged : isLoading=" + isLoading);
-    }
-
-    @Override
-    public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-        System.out.println("onPlayerStateChanged : playWhenReady=" + playWhenReady + " , playbackState=" + playbackState);
-        if (playbackState == Player.STATE_READY) {
-            System.out.println("ContentTime" + player.getContentPosition() / 1000);
-        }
-    }
-
-    @Override
-    public void onRepeatModeChanged(int repeatMode) {
-        System.out.println("onRepeatModeChanged : repeatMode=" + repeatMode);
-    }
-
-    @Override
-    public void onShuffleModeEnabledChanged(boolean shuffleModeEnabled) {
-        System.out.println("onShuffleModeEnabledChanged : shuffleModeEnabled=" + shuffleModeEnabled);
-    }
-
-    @Override
-    public void onPlayerError(ExoPlaybackException error) {
-        System.out.println("onPlayerError : error=" + error);
-    }
-
-    @Override
-    public void onPositionDiscontinuity(int reason) {
-        System.out.println("onPositionDiscontinuity : reason=" + reason);
-    }
-
-    @Override
-    public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
-        System.out.println("onPlaybackParametersChanged : playbackParameters=" + playbackParameters);
-    }
-
-    @Override
-    public void onSeekProcessed() {
-        System.out.println("onSeekProcessed");
-    }
-
-    long pos = 0;
-
     @Override
     public void onClick(View v) {
         if (v == play) {
@@ -182,14 +143,14 @@ public class MainActivity extends AppCompatActivity implements Player.EventListe
             player.stop();
         } else if (v == release) {
             player.release();
-        } else if (v == seek) {
-            long contentPosition = player.getContentPosition();
-            pos = pos + 1000 * 3;
-            player.seekTo(pos);
-        } else if (v == add) {
-            player.addListener(this);
-        } else if (v == remove) {
-            player.removeListener(this);
+        } else if (v == p1) {
+            player.prepare(getMediaSource(Uri.parse(path1)));
+        } else if (v == p2) {
+            player.prepare(getMediaSource(Uri.parse(path2)));
+        } else if (v == p3) {
+            player.prepare(getMediaSource(Uri.parse(path3)));
+        } else if (v == p4) {
+            player.prepare(getMediaSource(Uri.parse(path4)));
         }
     }
 }

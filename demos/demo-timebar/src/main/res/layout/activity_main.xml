@@ -5,16 +5,10 @@
     android:gravity="center"
     android:orientation="vertical">
 
-    <LinearLayout
+    <SurfaceView
+        android:id="@+id/surface"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <com.chengfu.fuplayer.ui.DefaultTimeBar
-            android:id="@+id/timeBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/colorAccent" />
-    </LinearLayout>
+        android:layout_height="200dp" />
 
 
 </LinearLayout>
